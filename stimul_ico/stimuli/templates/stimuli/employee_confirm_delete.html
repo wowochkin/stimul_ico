@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление сотрудника | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:560px; margin:0 auto;">
+    <h2>Удалить сотрудника</h2>
+    <p>Вы уверены, что хотите удалить сотрудника <strong>{{ object.full_name }}</strong>? Это действие нельзя отменить.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div style="margin-top: 16px; display:flex; gap:12px; justify-content:flex-end;">
+            <a class="btn btn-text" href="{% url 'employee-list' %}">Отмена</a>
+            <button type="submit" class="btn btn-accent">Удалить</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

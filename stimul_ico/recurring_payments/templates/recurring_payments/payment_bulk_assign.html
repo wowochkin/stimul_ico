@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Групповое назначение выплат | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card content-card">
+    <h2>Групповое назначение выплат — {{ period.name }}</h2>
+    <form method="get" class="filter-form" style="margin-bottom:20px;">
+        <div class="form-grid">
+            <div>
+                <label for="division-select">Подразделение</label>
+                <select id="division-select" name="division" onchange="this.form.submit()">
+                    <option value="__all__" {% if selected_division == '__all__' or not selected_division %}selected{% endif %}>Все подразделения</option>
+                    {% for division in divisions %}
+                        <option value="{{ division.id }}" {% if division.id|stringformat:'s' == selected_division %}selected{% endif %}>{{ division.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+
+    {% if employee_entries %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="division" value="{{ selected_division|default:'__all__' }}">
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Сотрудник</th>
+                            <th style="width:160px;">Сумма (₽)</th>
+                            <th>Основание выплаты</th>
+                            <th style="width:120px;">Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in employee_entries %}
+                            <tr>
+                                <td>{{ entry.employee.full_name }}</td>
+                                <td>
+                                    <input type="number" step="0.01" min="0" name="amount_{{ entry.employee.id }}" value="{{ entry.amount }}" {% if entry.locked %}readonly{% endif %} placeholder="0.00">
+                                </td>
+                                <td>
+                                    <input type="text" name="reason_{{ entry.employee.id }}" value="{{ entry.reason }}" {% if entry.locked %}readonly{% endif %} placeholder="Например: Надбавка за наставничество">
+                                </td>
+                                <td>
+                                    {% if entry.locked %}
+                                        <span class="status status-closed">Зафиксирована</span>
+                                    {% else %}
+                                        <span class="status status-open">Черновик</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
+                <a href="{% url 'recurring_payments:period-detail' period.pk %}" class="btn btn-text">Отмена</a>
+                <button type="submit" class="btn btn-primary">Сохранить выплаты</button>
+            </div>
+        </form>
+    {% else %}
+        <p>Сотрудники не найдены для выбранного фильтра.</p>
+    {% endif %}
+</div>
+{% endblock %}

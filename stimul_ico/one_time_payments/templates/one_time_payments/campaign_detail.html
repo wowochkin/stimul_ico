@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ campaign.name }} | Кампания | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card content-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+        <div>
+            <h2>{{ campaign.name }}</h2>
+            <p class="muted">Открытие: {{ campaign.opens_at|date:'d.m.Y' }}{% if campaign.deadline %}, дедлайн: {{ campaign.deadline|date:'d.m.Y' }}{% endif %}</p>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+            <span class="status status-{{ campaign.status }}">{{ campaign.get_status_display }}</span>
+            {% if perms.one_time_payments.change_requestcampaign %}
+                <a href="{% url 'one_time_payments:campaign-edit' campaign.pk %}" class="btn btn-text">Редактировать</a>
+            {% endif %}
+        </div>
+    </div>
+    {% if campaign.description %}
+        <p style="margin-bottom:24px; white-space:pre-wrap;">{{ campaign.description }}</p>
+    {% endif %}
+    {% if perms.one_time_payments.change_requestcampaign %}
+        <section style="margin-bottom:24px;">
+            <h3>Управление статусом</h3>
+            <form method="post" action="{% url 'one_time_payments:campaign-status' campaign.pk %}" class="form-inline">
+                {% csrf_token %}
+                <label for="action">Действие</label>
+                <select name="action" id="action">
+                    {% for value, label in status_form.fields.action.choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <textarea name="comment" rows="2" placeholder="Комментарий (необязательно)"></textarea>
+                <button type="submit" class="btn btn-primary">Применить</button>
+            </form>
+        </section>
+    {% endif %}
+    <section style="margin-bottom:32px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+            <h3>Заявки кампании</h3>
+            <a href="{% url 'request-list' %}?campaign={{ campaign.pk }}" class="btn btn-text">Смотреть все заявки</a>
+        </div>
+        <div class="table-wrapper" style="margin-top:12px;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Создано</th>
+                        <th>Сотрудник</th>
+                        <th>Сумма</th>
+                        <th>Статус</th>
+                        <th>Ответственный</th>
+                        <th>Комментарий</th>
+                        {% if perms.stimuli.change_stimulusrequest %}
+                            <th>Управление</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in campaign.stimulus_requests.all %}
+                        <tr>
+                            <td>{{ request.created_at|date:'d.m.Y H:i' }}</td>
+                            <td>{{ request.employee.full_name }}</td>
+                            <td>{{ request.amount }}</td>
+                            <td><span class="status status-{{ request.status }}">{{ request.get_status_display }}</span></td>
+                            <td>{{ request.requested_by.get_full_name|default:request.requested_by.username }}</td>
+                            <td>{{ request.admin_comment|default:'—' }}</td>
+                            {% if perms.stimuli.change_stimulusrequest %}
+                                <td>
+                                    <form method="post" action="{% url 'one_time_payments:campaign-request-status' campaign.pk request.pk %}" style="display:flex; flex-direction:column; gap:8px;">
+                                        {% csrf_token %}
+                                        <select name="status">
+                                            {% for value, label in request.Status.choices %}
+                                                <option value="{{ value }}" {% if value == request.status %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <textarea name="admin_comment" rows="2" placeholder="Комментарий администратора">{{ request.admin_comment }}</textarea>
+                                        <button type="submit" class="btn btn-text">Сохранить</button>
+                                    </form>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7">Заявок в кампании нет.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <section style="margin-bottom:32px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+            <h3>Разовые выплаты</h3>
+            <a href="{% url 'one_time_payments:manual-payment-list' %}?campaign={{ campaign.pk }}" class="btn btn-text">Все разовые выплаты</a>
+        </div>
+        <div class="table-wrapper" style="margin-top:12px;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Сотрудник</th>
+                        <th>Сумма</th>
+                        <th>Дата</th>
+                        <th>Основание</th>
+                        <th>Создал</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in campaign.manual_payments.all %}
+                        <tr>
+                            <td>{{ payment.employee.full_name }}</td>
+                            <td>{{ payment.amount }}</td>
+                            <td>{{ payment.payment_date|date:'d.m.Y' }}</td>
+                            <td>{{ payment.justification|default:'—' }}</td>
+                            <td>{{ payment.created_by.get_full_name|default:payment.created_by.username }}</td>
+                            <td style="display:flex; gap:8px; flex-wrap:wrap;">
+                                <a href="{% url 'one_time_payments:manual-payment-edit' payment.pk %}" class="btn btn-text">Изменить</a>
+                                <a href="{% url 'one_time_payments:manual-payment-delete' payment.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">Разовые выплаты отсутствуют.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% if perms.one_time_payments.add_onetimepayment %}
+        <section style="margin-bottom:16px;">
+            <h3>Добавить разовую выплату</h3>
+            <form method="post" action="{% url 'one_time_payments:campaign-manual-payment-add' campaign.pk %}">
+                {% csrf_token %}
+                <div class="form-grid">
+                    {% for field in manual_payment_form %}
+                        <div>
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {% if field.name == 'campaign' %}
+                                <input type="hidden" name="campaign" value="{{ campaign.pk }}">
+                                <p>Кампания: {{ campaign.name }}</p>
+                            {% else %}
+                                {{ field }}
+                            {% endif %}
+                            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
+                    <button type="submit" class="btn btn-primary">Создать выплату</button>
+                </div>
+            </form>
+        </section>
+    {% endif %}
+</div>
+{% endblock %}

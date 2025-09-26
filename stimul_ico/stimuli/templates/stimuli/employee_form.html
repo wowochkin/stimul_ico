@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Редактирование сотрудника{% else %}Новый сотрудник{% endif %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:720px; margin:0 auto;">
+    <h2>{% if object %}Редактирование: {{ object.full_name }}{% else %}Новый сотрудник{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-grid">
+            {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    {% if field.errors %}
+                        <div class="alert" style="margin-top:8px;">{{ field.errors|join:', ' }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        {% if assignment_formset %}
+            <div class="assignment-formset">
+                <h3 class="assignment-title">Внутренние совмещения</h3>
+                {{ assignment_formset.management_form }}
+                {% if assignment_formset.non_form_errors %}
+                    <div class="alert" style="margin-bottom:12px;">{{ assignment_formset.non_form_errors|join:', ' }}</div>
+                {% endif %}
+                {% for form in assignment_formset %}
+                    {% for hidden in form.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+                    <div class="assignment-row">
+                        {% for field in form.visible_fields %}
+                            <div class="assignment-field">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="alert" style="margin-top:8px;">{{ field.errors|join:', ' }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        {% if form.can_delete and form.instance.pk %}
+                            <label class="delete-checkbox">{{ form.DELETE }} Удалить</label>
+                        {% endif %}
+                        {% if form.non_field_errors %}
+                            <div class="alert" style="margin-top:8px;">{{ form.non_field_errors|join:', ' }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <p class="assignment-hint">Заполните поля только для совмещений, которые нужно сохранить. Пустые строки будут проигнорированы.</p>
+            </div>
+        {% endif %}
+        <div style="margin-top: 16px; display:flex; gap:12px; justify-content:flex-end;">
+            <a class="btn btn-text" href="{% url 'employee-list' %}">Отмена</a>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

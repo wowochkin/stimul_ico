@@ -1,0 +1,18 @@
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path('', views.HomeRedirectView.as_view(), name='home'),
+    path('employees/', views.EmployeeListView.as_view(), name='employee-list'),
+    path('employees/add/', views.EmployeeCreateView.as_view(), name='employee-add'),
+    path('employees/<int:pk>/edit/', views.EmployeeUpdateView.as_view(), name='employee-edit'),
+    path('employees/<int:pk>/delete/', views.EmployeeDeleteView.as_view(), name='employee-delete'),
+    path('requests/', views.StimulusRequestListView.as_view(), name='request-list'),
+    path('requests/new/', views.StimulusRequestCreateView.as_view(), name='request-create'),
+    path('requests/bulk-create/', views.StimulusRequestBulkCreateView.as_view(), name='request-bulk-create'),
+    path('requests/<int:pk>/edit/', views.StimulusRequestUpdateView.as_view(), name='request-edit'),
+    path('requests/<int:pk>/update-status/', views.StimulusRequestStatusUpdateView.as_view(), name='request-status-update'),
+    path('requests/<int:pk>/delete/', views.StimulusRequestDeleteView.as_view(), name='request-delete'),
+    path('requests/bulk-delete/', views.StimulusRequestBulkDeleteView.as_view(), name='request-bulk-delete'),
+]

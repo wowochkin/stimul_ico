@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Массовое назначение заявок | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card content-card">
+    <h2>Массовое назначение заявок по подразделению</h2>
+    <form method="get" class="filter-form" style="margin-bottom:24px;">
+        <div class="form-grid">
+            <div>
+                <label for="division-select">Подразделение</label>
+                <select id="division-select" name="division" onchange="this.form.submit()">
+                    <option value="" {% if not selected_division %}selected{% endif %}>— Выберите подразделение —</option>
+                    <option value="__all__" {% if selected_division == '__all__' %}selected{% endif %}>Все сотрудники</option>
+                    {% for division in divisions %}
+                        <option value="{{ division.id }}" {% if division.id|stringformat:'s' == selected_division %}selected{% endif %}>{{ division.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+
+    {% if selected_division %}
+        {% if employee_entries %}
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="division" value="{{ selected_division }}">
+                <div class="form-grid" style="margin-bottom:16px;">
+                    <div>
+                        <label for="campaign-select">Кампания</label>
+                        <select id="campaign-select" name="campaign">
+                            <option value="">— Без кампании —</option>
+                            {% for campaign in campaigns %}
+                                <option value="{{ campaign.id }}" {% if campaign.id|stringformat:'s' == selected_campaign %}selected{% endif %}>{{ campaign.name }} ({{ campaign.get_status_display }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Сотрудник</th>
+                                <th>Размер выплаты (₽)</th>
+                                <th>Обоснование</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in employee_entries %}
+                                {% with employee=entry.employee %}
+                                <tr>
+                                    <td>{{ employee.full_name }}</td>
+                                    <td>
+                                        <input type="number" step="0.01" min="0" name="amount_{{ employee.id }}" value="{{ entry.amount }}" placeholder="0.00" class="bulk-amount" data-justification-id="justification_{{ employee.id }}">
+                                    </td>
+                                    <td>
+                                        <textarea id="justification_{{ employee.id }}" name="justification_{{ employee.id }}" rows="2" placeholder="Обоснование">{{ entry.justification }}</textarea>
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
+                    <a href="{% url 'request-list' %}" class="btn btn-text">Отмена</a>
+                    <button type="submit" class="btn btn-primary">Создать заявки</button>
+                </div>
+            </form>
+        {% else %}
+            <p>В выбранном подразделении сотрудники не найдены.</p>
+        {% endif %}
+    {% else %}
+        <p>Выберите подразделение, чтобы загрузить список сотрудников.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+    const amounts = document.querySelectorAll('.bulk-amount');
+    if (!amounts.length) return;
+
+    const toggleRequired = (input) => {
+        const justificationId = input.dataset.justificationId;
+        if (!justificationId) return;
+        const textarea = document.getElementById(justificationId);
+        if (!textarea) return;
+        const value = parseFloat(input.value.replace(',', '.'));
+        textarea.required = !isNaN(value) && value > 0;
+    };
+
+    amounts.forEach((input) => {
+        toggleRequired(input);
+        input.addEventListener('input', () => toggleRequired(input));
+    });
+})();
+</script>
+{% endblock %}

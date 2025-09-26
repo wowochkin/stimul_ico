@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление позиции | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:640px; margin:0 auto; text-align:center;">
+    <h2>Удалить позицию?</h2>
+    <p>Подтвердите удаление позиции <strong>{{ object }}</strong> из штатного расписания.</p>
+    <form method="post" style="display:flex; justify-content:center; gap:12px; margin-top:24px;">
+        {% csrf_token %}
+        <a href="{% url 'staffing:quota-list' %}" class="btn btn-text">Отмена</a>
+        <button type="submit" class="btn btn-danger">Удалить</button>
+    </form>
+</div>
+{% endblock %}

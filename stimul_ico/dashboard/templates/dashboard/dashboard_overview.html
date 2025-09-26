@@ -1,0 +1,601 @@
+{% extends 'base.html' %}
+
+{% block title %}Дэшборд | {{ block.super }}{% endblock %}
+
+{% block content %}
+<style>
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+    }
+
+    @media (max-width: 1280px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .chart-card {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        min-height: 340px;
+    }
+
+    .chart-card h4 {
+        margin-bottom: 12px;
+    }
+
+    .chart-card .chart-wrapper {
+        flex: 1 1 auto;
+        position: relative;
+        min-height: 280px;
+    }
+
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+    }
+</style>
+<div class="card content-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+        <h2>Дэшборд выплат</h2>
+        <a href="{{ export_url }}?{{ request.GET.urlencode }}" class="btn btn-primary">Экспорт в CSV</a>
+    </div>
+    <form method="get" class="filter-form" style="margin-bottom:24px;">
+        <div class="form-grid">
+            {% for field in filter_form %}
+                <div>
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="alert" style="margin-top:8px;">{{ field.errors|join:', ' }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="filter-actions" style="margin-top:16px;">
+            <button type="submit" class="btn btn-primary">Применить</button>
+            <a href="{% url 'dashboard:overview' %}" class="btn btn-text">Сбросить</a>
+        </div>
+    </form>
+    <section class="stat-grid" style="margin-bottom:32px;">
+        <div class="stat-card">
+            <div class="stat-title">Постоянные выплаты</div>
+            <div class="stat-value">{{ totals.recurring }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Разовые выплаты</div>
+            <div class="stat-value">{{ totals.one_time }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Одобренные заявки</div>
+            <div class="stat-value">{{ totals.requests }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Совокупные выплаты</div>
+            <div class="stat-value">{{ totals.employees }}</div>
+        </div>
+    </section>
+    <section style="margin-bottom:32px;">
+        <h3>Графики</h3>
+        <div class="charts-grid">
+            <div class="card chart-card">
+                <h4>Динамика по месяцам</h4>
+                <div class="chart-wrapper">
+                    <canvas id="monthlyTotalsChart"></canvas>
+                </div>
+            </div>
+            <div class="card chart-card">
+                <h4>Сумма по подразделениям</h4>
+                <div class="chart-wrapper">
+                    <canvas id="divisionTotalsChart"></canvas>
+                </div>
+            </div>
+            <div class="card chart-card">
+                <h4>Топ сотрудников</h4>
+                <div class="chart-wrapper">
+                    <canvas id="employeeTotalsChart"></canvas>
+                </div>
+            </div>
+            <div class="card chart-card">
+                <h4>Структура по подразделениям</h4>
+                <div class="chart-wrapper">
+                    <canvas id="divisionBreakdownChart"></canvas>
+                </div>
+            </div>
+            <div class="card chart-card">
+                <h4>Средний чек vs цель</h4>
+                <div class="chart-wrapper">
+                    <canvas id="categoryBenchmarkChart"></canvas>
+                </div>
+            </div>
+            <div class="card chart-card">
+                <h4>Структура выплат</h4>
+                <div class="chart-wrapper">
+                    <canvas id="totalsBreakdownChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section style="margin-bottom:32px;">
+        <h3>Динамика по месяцам</h3>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Месяц</th>
+                        <th>Постоянные</th>
+                        <th>Разовые</th>
+                        <th>Заявки</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in monthly_totals %}
+                        <tr>
+                            <td>{% if row.month %}{{ row.month|date:'Y-m' }}{% else %}—{% endif %}</td>
+                            <td>{{ row.recurring }}</td>
+                            <td>{{ row.one_time }}</td>
+                            <td>{{ row.requests }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4">Нет данных по выбранным фильтрам.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <section style="margin-bottom:32px;">
+        <h3>Статистика по подразделениям</h3>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Подразделение</th>
+                        <th>Оклад</th>
+                        <th>Надбавки</th>
+                        <th>Постоянные</th>
+                        <th>Разовые</th>
+                        <th>Заявки</th>
+                        <th>Итого</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in division_stats %}
+                        <tr>
+                            <td>{{ item.division.name }}</td>
+                            <td>{{ item.total_salary }}</td>
+                            <td>{{ item.allowances }}</td>
+                            <td>{{ item.recurring }}</td>
+                            <td>{{ item.one_time }}</td>
+                            <td>{{ item.requests }}</td>
+                            <td>{{ item.total }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7">Нет данных по подразделениям.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <section style="margin-bottom:32px;">
+        <h3>Топ сотрудников</h3>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Сотрудник</th>
+                        <th>Подразделение</th>
+                        <th>Оклад</th>
+                        <th>Надбавки</th>
+                        <th>Постоянные</th>
+                        <th>Разовые</th>
+                        <th>Заявки</th>
+                        <th>Итого</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in employee_stats %}
+                        <tr>
+                            <td>{{ item.employee.full_name }}</td>
+                            <td>{{ item.division.name }}</td>
+                            <td>{{ item.base_salary }}</td>
+                            <td>{{ item.allowances }}</td>
+                            <td>{{ item.recurring }}</td>
+                            <td>{{ item.one_time }}</td>
+                            <td>{{ item.requests }}</td>
+                            <td>{{ item.total }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8">Нет данных по сотрудникам для выбранных фильтров.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <section style="margin-bottom:32px;">
+        <h3>Целевые показатели</h3>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Категория</th>
+                        <th>Среднее значение</th>
+                        <th>Цель</th>
+                        <th>Отклонение</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bench in benchmarks %}
+                        <tr>
+                            <td>{{ bench.category }}</td>
+                            <td>{{ bench.average }}</td>
+                            <td>{{ bench.target }}</td>
+                            <td>{% if bench.delta >= 0 %}+{% endif %}{{ bench.delta }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <section>
+        <h3>Последние выделения бюджета</h3>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Бюджет</th>
+                        <th>Цель</th>
+                        <th>Выделено</th>
+                        <th>Резерв</th>
+                        <th>Израсходовано</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for allocation in budget_allocations %}
+                        <tr>
+                            <td>{{ allocation.created_at|date:'d.m.Y' }}</td>
+                            <td>{{ allocation.budget }}</td>
+                            <td>
+                                {% if allocation.recurring_period %}
+                                    <a href="{% url 'recurring_payments:period-detail' allocation.recurring_period_id %}">{{ allocation.recurring_period }}</a>
+                                {% elif allocation.campaign %}
+                                    <a href="{% url 'one_time_payments:campaign-detail' allocation.campaign_id %}">{{ allocation.campaign.name }}</a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>{{ allocation.allocated_amount }}</td>
+                            <td>{{ allocation.reserved_amount }}</td>
+                            <td>{{ allocation.spent_amount }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">Выделения бюджета не найдены.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function () {
+    const rawData = '{{ chart_data_json|default:"{}"|escapejs }}';
+    if (!rawData) {
+        return;
+    }
+    let chartData;
+    try {
+        chartData = JSON.parse(rawData);
+    } catch (err) {
+        console.error('Не удалось разобрать данные графиков', err);
+        return;
+    }
+
+    const numberFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
+    const formatMoney = (value) => numberFormatter.format(value || 0);
+
+    function buildLineChart(ctxId, labels, datasets) {
+        if (!labels.length) {
+            return;
+        }
+        const ctx = document.getElementById(ctxId);
+        if (!ctx) {
+            return;
+        }
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets,
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: formatMoney,
+                        },
+                    },
+                    x: {
+                        ticks: { autoSkip: true, maxRotation: 0 },
+                    },
+                },
+                plugins: { legend: { position: 'bottom' } },
+            },
+        });
+    }
+
+    function buildBarChart(ctxId, labels, data, color, extraOptions = {}) {
+        if (!labels.length) {
+            return;
+        }
+        const ctx = document.getElementById(ctxId);
+        if (!ctx) {
+            return;
+        }
+        const isHorizontal = extraOptions.indexAxis === 'y';
+        const container = ctx.parentNode;
+        if (container) {
+            container.style.height = `${Math.max(220, labels.length * 32)}px`;
+        }
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: color,
+                    borderRadius: 4,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: extraOptions.indexAxis || 'x',
+                scales: {
+                    x: isHorizontal
+                        ? {
+                              beginAtZero: true,
+                              ticks: { callback: formatMoney },
+                          }
+                        : {
+                              ticks: { maxRotation: 0, autoSkip: true },
+                          },
+                    y: isHorizontal
+                        ? {
+                              ticks: { autoSkip: false },
+                          }
+                        : {
+                              beginAtZero: true,
+                              ticks: { callback: formatMoney },
+                          },
+                },
+                plugins: { legend: { display: false } },
+                ...extraOptions.overrides,
+            },
+        });
+    }
+
+    if (chartData.monthly) {
+        buildLineChart('monthlyTotalsChart', chartData.monthly.labels, [
+            {
+                label: 'Постоянные',
+                data: chartData.monthly.recurring,
+                borderColor: '#1d4ed8',
+                backgroundColor: 'rgba(29,78,216,0.15)',
+                tension: 0.35,
+                fill: true,
+            },
+            {
+                label: 'Разовые',
+                data: chartData.monthly.one_time,
+                borderColor: '#047857',
+                backgroundColor: 'rgba(4,120,87,0.15)',
+                tension: 0.35,
+                fill: true,
+            },
+            {
+                label: 'Заявки',
+                data: chartData.monthly.requests,
+                borderColor: '#92400e',
+                backgroundColor: 'rgba(146,64,14,0.15)',
+                tension: 0.35,
+                fill: true,
+            },
+        ]);
+    }
+
+    if (chartData.division) {
+        buildBarChart(
+            'divisionTotalsChart',
+            chartData.division.labels,
+            chartData.division.totals,
+            '#6366f1',
+            {
+                indexAxis: 'y',
+            }
+        );
+    }
+
+    if (chartData.employees) {
+        buildBarChart(
+            'employeeTotalsChart',
+            chartData.employees.labels,
+            chartData.employees.totals,
+            '#f97316',
+            {
+                indexAxis: 'y',
+                overrides: {
+                    scales: {
+                        x: { beginAtZero: true, ticks: { callback: formatMoney } },
+                        y: { beginAtZero: false, ticks: { autoSkip: false } },
+                    },
+                },
+            }
+        );
+    }
+
+    function buildStackedBarChart(ctxId, labels, datasets) {
+        if (!labels.length) {
+            return;
+        }
+        const ctx = document.getElementById(ctxId);
+        if (!ctx) {
+            return;
+        }
+        const container = ctx.parentNode;
+        if (container) {
+            container.style.height = `${Math.max(220, labels.length * 36)}px`;
+        }
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets,
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        stacked: true,
+                        ticks: { callback: formatMoney },
+                    },
+                    y: { stacked: true, beginAtZero: true, ticks: { autoSkip: false } },
+                },
+                plugins: { legend: { position: 'bottom' } },
+            },
+        });
+    }
+
+    function buildDoughnutChart(ctxId, labels, data, colors) {
+        const total = (data || []).reduce((acc, value) => acc + value, 0);
+        if (!total) {
+            return;
+        }
+        const ctx = document.getElementById(ctxId);
+        if (!ctx) {
+            return;
+        }
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: colors,
+                    hoverOffset: 6,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                },
+            },
+        });
+    }
+
+    function buildGroupedBarChart(ctxId, labels, datasets) {
+        if (!labels.length) {
+            return;
+        }
+        const ctx = document.getElementById(ctxId);
+        if (!ctx) {
+            return;
+        }
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets,
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: formatMoney } },
+                },
+                plugins: { legend: { position: 'bottom' } },
+            },
+        });
+    }
+
+    if (chartData.division_breakdown && chartData.division_breakdown.labels.length) {
+        buildStackedBarChart('divisionBreakdownChart', chartData.division_breakdown.labels, [
+            {
+                label: 'Оклад',
+                data: chartData.division_breakdown.base,
+                backgroundColor: 'rgba(59,130,246,0.7)',
+            },
+            {
+                label: 'Надбавки',
+                data: chartData.division_breakdown.allowances,
+                backgroundColor: 'rgba(249,115,22,0.7)',
+            },
+            {
+                label: 'Постоянные',
+                data: chartData.division_breakdown.recurring,
+                backgroundColor: 'rgba(34,197,94,0.7)',
+            },
+            {
+                label: 'Разовые',
+                data: chartData.division_breakdown.one_time,
+                backgroundColor: 'rgba(99,102,241,0.7)',
+            },
+            {
+                label: 'Заявки',
+                data: chartData.division_breakdown.requests,
+                backgroundColor: 'rgba(244,63,94,0.7)',
+            },
+        ]);
+    }
+
+    if (chartData.category && chartData.category.labels.length) {
+        buildGroupedBarChart('categoryBenchmarkChart', chartData.category.labels, [
+            {
+                label: 'Средний чек',
+                data: chartData.category.average,
+                backgroundColor: 'rgba(99,102,241,0.8)',
+            },
+            {
+                label: 'Целевой показатель',
+                data: chartData.category.target,
+                backgroundColor: 'rgba(161,98,247,0.8)',
+            },
+        ]);
+    }
+
+    if (chartData.totals_breakdown && chartData.totals_breakdown.values) {
+        buildDoughnutChart(
+            'totalsBreakdownChart',
+            chartData.totals_breakdown.labels,
+            chartData.totals_breakdown.values,
+            ['#2563eb', '#22c55e', '#f97316']
+        );
+    }
+})();
+</script>
+{% endblock %}

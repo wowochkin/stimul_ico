@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление разовой выплаты | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:640px; margin:0 auto; text-align:center;">
+    <h2>Удалить разовую выплату?</h2>
+    <p>Вы действительно хотите удалить выплату сотруднику <strong>{{ object.employee.full_name }}</strong> на сумму <strong>{{ object.amount }}</strong>?</p>
+    <form method="post" style="display:flex; gap:12px; justify-content:center; margin-top:24px;">
+        {% csrf_token %}
+        <a href="{% if object.campaign_id %}{% url 'one_time_payments:campaign-detail' object.campaign_id %}{% else %}{% url 'one_time_payments:manual-payment-list' %}{% endif %}" class="btn btn-text">Отмена</a>
+        <button type="submit" class="btn btn-danger">Удалить</button>
+    </form>
+</div>
+{% endblock %}

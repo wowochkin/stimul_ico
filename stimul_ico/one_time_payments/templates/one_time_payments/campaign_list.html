@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Кампании заявок | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card content-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; flex-wrap:wrap;">
+        <h2>Кампании заявок</h2>
+        {% if perms.one_time_payments.add_requestcampaign %}
+            <a href="{% url 'one_time_payments:campaign-add' %}" class="btn btn-primary">Новая кампания</a>
+        {% endif %}
+    </div>
+    <form method="get" class="filter-form" style="margin-bottom:16px; max-width:320px;">
+        <label for="status">Статус</label>
+        <select name="status" id="status" onchange="this.form.submit()">
+            <option value="">Все</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Период</th>
+                    <th>Статус</th>
+                    <th>Заявок</th>
+                    <th>Разовых выплат</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for campaign in campaigns %}
+                    <tr>
+                        <td><a href="{% url 'one_time_payments:campaign-detail' campaign.pk %}">{{ campaign.name }}</a></td>
+                        <td>{{ campaign.opens_at|date:'d.m.Y' }}{% if campaign.deadline %} — {{ campaign.deadline|date:'d.m.Y' }}{% endif %}</td>
+                        <td><span class="status status-{{ campaign.status }}">{{ campaign.get_status_display }}</span></td>
+                        <td>{{ campaign.stimulus_requests.count }}</td>
+                        <td>{{ campaign.manual_payments.count }}</td>
+                        <td style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <a href="{% url 'one_time_payments:campaign-detail' campaign.pk %}" class="btn btn-text">Открыть</a>
+                            {% if perms.one_time_payments.change_requestcampaign %}
+                                <a href="{% url 'one_time_payments:campaign-edit' campaign.pk %}" class="btn btn-text">Редактировать</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">Кампании отсутствуют.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if selected_status %}&status={{ selected_status }}{% endif %}">Назад</a>
+            {% endif %}
+            <span class="current">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if selected_status %}&status={{ selected_status }}{% endif %}">Вперёд</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

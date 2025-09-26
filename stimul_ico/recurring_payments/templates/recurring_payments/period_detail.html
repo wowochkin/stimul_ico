@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ period.name }} | Постоянные выплаты | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card content-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; flex-wrap:wrap;">
+        <h2>{{ period.name }}</h2>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <span class="status status-{{ period.status }}">{{ period.get_status_display }}</span>
+            {% if perms.recurring_payments.change_recurringperiod %}
+                <a href="{% url 'recurring_payments:period-edit' period.pk %}" class="btn btn-text">Редактировать</a>
+                {% if period.status == period.Status.DRAFT %}
+                    <form method="post" action="{% url 'recurring_payments:period-open' period.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">Открыть период</button>
+                    </form>
+                {% elif period.status == period.Status.OPEN %}
+                    <form method="post" action="{% url 'recurring_payments:period-close' period.pk %}" style="display:flex; gap:8px; align-items:flex-end;">
+                        {% csrf_token %}
+                        {{ close_form.reason.label_tag }}
+                        {{ close_form.reason }}
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Закрыть период и зафиксировать выплаты?')">Закрыть период</button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    <section style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px;">
+        <div class="stat-card">
+            <div class="stat-title">Период</div>
+            <div class="stat-value">{{ period.start_date|date:'d.m.Y' }} — {{ period.end_date|date:'d.m.Y' }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Лимит бюджета</div>
+            <div class="stat-value">{{ period.budget_limit|default:0 }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Сумма выплат</div>
+            <div class="stat-value">{{ period.total_payments }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Остаток бюджета</div>
+            <div class="stat-value">{{ period.remaining_budget }}</div>
+        </div>
+    </section>
+    {% if allocations %}
+        <section style="margin-bottom:24px;">
+            <h3>Выделения бюджета</h3>
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Бюджет</th>
+                            <th>Выделено</th>
+                            <th>Зарезервировано</th>
+                            <th>Израсходовано</th>
+                            <th>Доступно</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for allocation in allocations %}
+                            <tr>
+                                <td>{{ allocation.budget }}</td>
+                                <td>{{ allocation.allocated_amount }}</td>
+                                <td>{{ allocation.reserved_amount }}</td>
+                                <td>{{ allocation.spent_amount }}</td>
+                                <td>{{ allocation.available_amount }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endif %}
+    <section style="margin-bottom:32px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:12px;">
+            <h3>Выплаты периода</h3>
+            {% if period.status != period.Status.CLOSED and perms.recurring_payments.add_recurringpayment %}
+                <a href="{{ bulk_assign_url }}" class="btn btn-primary">Групповое назначение</a>
+            {% endif %}
+        </div>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Сотрудник</th>
+                        <th>Основание</th>
+                        <th>Сумма</th>
+                        <th>Комментарий</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                        <tr>
+                            <td>{{ payment.employee.full_name }}</td>
+                            <td>{{ payment.reason }}</td>
+                            <td>{{ payment.amount }}</td>
+                            <td>{{ payment.description|default:'—' }}</td>
+                            <td>{% if payment.is_locked %}<span class="status status-closed">Зафиксирована</span>{% else %}<span class="status status-open">Черновик</span>{% endif %}</td>
+                            <td style="display:flex; gap:8px; flex-wrap:wrap;">
+                                <a href="{% url 'recurring_payments:payment-edit' payment.pk %}" class="btn btn-text">Изменить</a>
+                                <a href="{% url 'recurring_payments:payment-delete' payment.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">Выплаты не добавлены.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

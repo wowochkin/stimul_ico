@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Заявки на стимулирование | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card content-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:16px;">
+        <h2>Заявки на стимулирование</h2>
+        <div style="display:flex; gap:12px;">
+            {% if perms.stimuli.add_stimulusrequest %}
+                <a class="btn btn-primary" href="{% url 'request-create' %}">Новая заявка</a>
+                <a class="btn btn-primary" href="{% url 'request-bulk-create' %}">Назначить подразделению</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="filter-wrapper">
+    <form method="get" class="filter-form" data-autosubmit="true" data-autosubmit-delay="400">
+        <div class="form-grid">
+            {% for field in filter.form %}
+                <div>
+                    <label>{{ field.label }}</label>
+                    {{ field }}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="filter-actions">
+            <a href="{% url 'request-list' %}" class="btn btn-text">Сбросить</a>
+        </div>
+    </form>
+    </div>
+    {% if can_bulk_delete %}
+        <form id="bulk-delete-form" method="post" action="{% url 'request-bulk-delete' %}">
+            {% csrf_token %}
+            <div class="bulk-actions">
+                <label class="bulk-select">
+                    <input type="checkbox" id="select-all-requests">
+                    <span>Выбрать все</span>
+                </label>
+                <button type="submit" class="btn btn-danger" id="bulk-delete-btn" disabled onclick="return confirm('Удалить выбранные заявки?')">Удалить выбранные</button>
+            </div>
+        </form>
+    {% endif %}
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    {% if can_bulk_delete %}
+                        <th style="width:40px;"></th>
+                    {% endif %}
+                    <th>Создано</th>
+                    <th>Сотрудник</th>
+                    <th>Кампания</th>
+                    <th>Размер выплаты</th>
+                    <th>Статус</th>
+                    <th>Ответственный</th>
+                    <th>Обоснование</th>
+                    <th>Комментарий администратора</th>
+                    {% if show_manage_column %}
+                        <th style="width:180px;">Управление</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in requests %}
+                    <tr>
+                        {% if can_bulk_delete %}
+                            <td>
+                                {% if request.can_delete %}
+                                    <input type="checkbox" form="bulk-delete-form" name="selected_requests" value="{{ request.pk }}" class="request-checkbox">
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                        <td>{{ request.created_at|date:'d.m.Y H:i' }}</td>
+                        <td>{{ request.employee.full_name }}</td>
+                        <td>{% if request.campaign %}<a href="{% url 'one_time_payments:campaign-detail' request.campaign_id %}">{{ request.campaign.name }}</a>{% else %}—{% endif %}</td>
+                        <td>{{ request.amount }}</td>
+                        <td><span class="status status-{{ request.status }}">{{ request.get_status_display }}</span></td>
+                        <td>{{ request.requested_by.get_full_name|default:request.requested_by.username }}</td>
+                        <td>{{ request.justification|linebreaksbr }}</td>
+                        <td>{{ request.admin_comment|linebreaksbr }}</td>
+                        {% if perms.stimuli.change_stimulusrequest %}
+                            <td>
+                                <form method="post" action="{% url 'request-status-update' request.pk %}" data-autosubmit="true" data-autosubmit-delay="200">
+                                    {% csrf_token %}
+                                    <div style="display:flex; flex-direction:column; gap:8px;">
+                                        <select name="status">
+                                            {% for value, label in request.Status.choices %}
+                                                <option value="{{ value }}" {% if value == request.status %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <textarea name="admin_comment" rows="2" placeholder="Комментарий" data-autosubmit-delay="1200">{{ request.admin_comment }}</textarea>
+                                        {% if request.can_edit %}
+                                            <a href="{% url 'request-edit' request.pk %}" class="btn btn-text">Редактировать</a>
+                                        {% endif %}
+                                        {% if request.can_delete %}
+                                            <a href="{% url 'request-delete' request.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
+                                        {% endif %}
+                                    </div>
+                                </form>
+                            </td>
+                    {% elif request.can_edit or request.can_delete %}
+                        <td>
+                            <div style="display:flex; flex-direction:column; gap:8px;">
+                                {% if request.can_edit %}
+                                    <a href="{% url 'request-edit' request.pk %}" class="btn btn-text">Редактировать</a>
+                                {% endif %}
+                                {% if request.can_delete %}
+                                    <a href="{% url 'request-delete' request.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    {% elif show_manage_column %}
+                        <td></td>
+                    {% endif %}
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="{{ table_colspan }}">Заявок нет.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}">Назад</a>
+            {% endif %}
+            <span class="current">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

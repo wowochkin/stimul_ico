@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Разовые выплаты | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card content-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+        <h2>Разовые выплаты</h2>
+        {% if perms.one_time_payments.add_onetimepayment %}
+            <a href="{% url 'one_time_payments:manual-payment-add' %}" class="btn btn-primary">Новая выплата</a>
+        {% endif %}
+    </div>
+    <form method="get" class="filter-form" style="margin-bottom:16px; max-width:320px;">
+        <label for="campaign-filter">Кампания</label>
+        <select id="campaign-filter" name="campaign" onchange="this.form.submit()">
+            <option value="">Все кампании</option>
+            {% for campaign in campaigns %}
+                <option value="{{ campaign.id }}" {% if selected_campaign == campaign.id|stringformat:'s' %}selected{% endif %}>{{ campaign.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    {% if selected_campaign_obj %}
+        <div class="alert" style="margin-bottom:16px;">Показаны выплаты по кампании "{{ selected_campaign_obj.name }}". <a href="{% url 'one_time_payments:manual-payment-list' %}">Сбросить фильтр</a></div>
+    {% endif %}
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Сотрудник</th>
+                    <th>Сумма</th>
+                    <th>Дата</th>
+                    <th>Кампания</th>
+                    <th>Основание</th>
+                    <th>Создатель</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.employee.full_name }}</td>
+                        <td>{{ payment.amount }}</td>
+                        <td>{{ payment.payment_date|date:'d.m.Y' }}</td>
+                        <td>{% if payment.campaign %}<a href="{% url 'one_time_payments:campaign-detail' payment.campaign_id %}">{{ payment.campaign.name }}</a>{% else %}—{% endif %}</td>
+                        <td>{{ payment.justification|default:'—' }}</td>
+                        <td>{{ payment.created_by.get_full_name|default:payment.created_by.username }}</td>
+                        <td style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <a href="{% url 'one_time_payments:manual-payment-edit' payment.pk %}" class="btn btn-text">Изменить</a>
+                            <a href="{% url 'one_time_payments:manual-payment-delete' payment.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7">Выплаты не найдены.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}">Назад</a>
+            {% endif %}
+            <span class="current">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

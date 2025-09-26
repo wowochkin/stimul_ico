@@ -1,0 +1,210 @@
+:root {
+    color-scheme: light dark;
+    --bg: #f6f6f6;
+    --card: #ffffff;
+    --text: #1f2933;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --border: #d1d5db;
+    --danger: #b91c1c;
+    --success: #047857;
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-header,
+.page-footer {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+}
+
+.page-footer {
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+    margin-top: auto;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.auth-state {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+main {
+    display: grid;
+    gap: 1.5rem;
+    padding: 2rem;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.form-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.form-grid label {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea,
+.form-grid button,
+.actions input,
+.actions select,
+.actions button {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.form-grid button,
+.actions button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+.form-grid button:disabled,
+.actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hint {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+table th,
+table td {
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+table tbody tr:hover {
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge.pending {
+    background: rgba(251, 191, 36, 0.2);
+    color: #92400e;
+}
+
+.badge.approved {
+    background: rgba(6, 95, 70, 0.2);
+    color: var(--success);
+}
+
+.badge.rejected {
+    background: rgba(220, 38, 38, 0.2);
+    color: var(--danger);
+}
+
+.badge.archived {
+    background: rgba(107, 114, 128, 0.2);
+    color: var(--muted);
+}
+
+.status-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.status-actions button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+#messages .message {
+    padding: 0.8rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border);
+}
+
+#messages .message.success {
+    border-color: rgba(4, 120, 87, 0.5);
+    background: rgba(16, 185, 129, 0.15);
+}
+
+#messages .message.error {
+    border-color: rgba(185, 28, 28, 0.4);
+    background: rgba(248, 113, 113, 0.15);
+}
+
+@media (max-width: 768px) {
+    main {
+        padding: 1rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}

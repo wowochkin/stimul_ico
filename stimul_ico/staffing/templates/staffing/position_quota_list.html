@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Штатное расписание | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:16px;">
+        <h2>Штатное расписание</h2>
+        <a class="btn btn-primary" href="{{ export_url }}">Экспорт в Excel</a>
+    </div>
+    <form method="post" action="{% url 'staffing:quota-create' %}" style="margin-bottom:24px;">
+        {% csrf_token %}
+        <div class="form-grid">
+            {% for field in create_form %}
+                <div>
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    {% if field.errors %}
+                        <div class="alert" style="margin-top:8px;">{{ field.errors|join:', ' }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <div style="margin-top:16px; display:flex; justify-content:flex-end;">
+            <button class="btn btn-primary" type="submit">Добавить позицию</button>
+        </div>
+    </form>
+    {% for division in divisions %}
+        <div class="card" style="margin-bottom:16px;">
+            <h3>{{ division.name }}</h3>
+            {% if division.quotas.all %}
+                <table class="table" style="margin-top:12px;">
+                    <thead>
+                        <tr>
+                            <th>Должность</th>
+                            <th>Всего ставок</th>
+                            <th>Занятые</th>
+                            <th>Вакантные</th>
+                            <th>Комментарий</th>
+                            <th>История изменений</th>
+                            <th style="width:280px;">Управление</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quota in division.quotas.all %}
+                            <tr>
+                                <td>{{ quota.position.name }}</td>
+                                <td>{{ quota.total_fte|floatformat:3 }}</td>
+                                <td>{{ quota.occupied_fte|floatformat:3 }}</td>
+                                <td>{{ quota.vacant_fte|floatformat:3 }}</td>
+                                <td>{{ quota.comment|default:'—' }}</td>
+                                <td>
+                                    {% if quota.versions.all %}
+                                        <ul class="assignment-list">
+                                            {% for version in quota.versions.all %}
+                                                <li>{{ version.total_fte|floatformat:3 }} (занято {{ version.occupied_fte|floatformat:3 }}, вакантно {{ version.vacant_fte|floatformat:3 }}) с {{ version.effective_from|date:'d.m.Y' }}{% if version.effective_to %} по {{ version.effective_to|date:'d.m.Y' }}{% endif %}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="post" action="{% url 'staffing:quota-version-create' quota.pk %}" style="margin-bottom:12px;">
+                                        {% csrf_token %}
+                                        <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px;">
+                                            <div>
+                                                <label>С</label>
+                                                {{ quota.version_form.effective_from }}
+                                            </div>
+                                            <div>
+                                                <label>По</label>
+                                                {{ quota.version_form.effective_to }}
+                                            </div>
+                                            <div>
+                                                <label>Всего</label>
+                                                {{ quota.version_form.total_fte }}
+                                            </div>
+                                            <div>
+                                                <label>Занято</label>
+                                                {{ quota.version_form.occupied_fte }}
+                                            </div>
+                                            <div>
+                                                <label>Вакантно</label>
+                                                {{ quota.version_form.vacant_fte }}
+                                            </div>
+                                        </div>
+                                        <div style="margin-top:8px; display:flex; justify-content:flex-end; gap:8px;">
+                                            <button class="btn btn-primary" type="submit">Сохранить</button>
+                                        </div>
+                                    </form>
+                                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                                        <a class="btn btn-text" href="{% url 'staffing:quota-edit' quota.pk %}">Редактировать</a>
+                                        <form method="post" action="{% url 'staffing:quota-delete' quota.pk %}" onsubmit="return confirm('Удалить позицию?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-text" style="color:#b4231a;">Удалить</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>В подразделении нет настроенных позиций.</p>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>Подразделения не найдены. Добавьте позицию, чтобы начать формировать расписание.</p>
+    {% endfor %}
+</div>
+{% endblock %}
