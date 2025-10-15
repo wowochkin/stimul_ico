@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend /app/backend
 COPY frontend /app/frontend
-COPY staffing /app/staffing
+COPY backend/staffing /app/backend/staffing
 COPY README.md requirements.txt /app/
 
 COPY entrypoint.sh /app/entrypoint.sh
