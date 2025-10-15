@@ -13,16 +13,16 @@ install:
 	$(PIP) install -r requirements.txt
 
 migrate:
-	$(PY) stimul_ico/manage.py migrate
+	$(PY) backend/manage.py migrate
 
 superuser:
-	$(PY) stimul_ico/manage.py createsuperuser
+	$(PY) backend/manage.py createsuperuser
 
 run:
-	$(PY) stimul_ico/manage.py runserver 0.0.0.0:8000
+	$(PY) backend/manage.py runserver 0.0.0.0:8000
 
 collectstatic:
-	$(PY) stimul_ico/manage.py collectstatic --noinput
+	$(PY) backend/manage.py collectstatic --noinput
 
 docker-build:
 	docker build -t stimul-ico:latest /Users/vladimirabramov/Stimul_ICO
@@ -31,7 +31,7 @@ docker-up:
 	docker run --rm --name stimul-ico \
 		-p 8000:8000 \
 		--env-file .env \
-		-v /Users/vladimirabramov/Stimul_ICO/docker_data/db.sqlite3:/app/stimul_ico/db.sqlite3 \
+		-v /Users/vladimirabramov/Stimul_ICO/docker_data/db.sqlite3:/app/backend/db.sqlite3 \
 		-v /Users/vladimirabramov/Stimul_ICO/docker_data/staticfiles:/app/staticfiles \
 		stimul-ico:latest
 

@@ -42,7 +42,7 @@
 
 3. Выполните миграции БД:
    ```bash
-   cd stimul_ico
+   cd backend
    python manage.py migrate
    ```
 
@@ -95,11 +95,11 @@
    - при необходимости `DJANGO_DEBUG=0`
 5. После первого деплоя откройте **Web Console → shell** и создайте суперпользователя:
    ```bash
-   python stimul_ico/manage.py createsuperuser
+   python backend/manage.py createsuperuser
    ```
 6. При необходимости загрузите сотрудников:
    ```bash
-   python stimul_ico/manage.py import_employees "Таблица по стимулу 2025-2026 (2).xlsx"
+   python backend/manage.py import_employees "Таблица по стимулу 2025-2026 (2).xlsx"
    ```
 
 Контейнер собирается на базе `Dockerfile`, запуск осуществляется через `entrypoint.sh`, который автоматически выполняет `migrate` и `collectstatic`, затем стартует `gunicorn` на порту 8000.
@@ -137,11 +137,11 @@
 
 ## Структура проекта
 
-- `stimul_ico/stimul_ico/` — настройки проекта Django
-- `stimul_ico/stimuli/` — модели, формы, фильтры, шаблоны
-- `stimul_ico/templates/` — общие шаблоны (включая страницу входа)
-- `stimul_ico/static/` — стили для серверных шаблонов
-- `stimul_ico/api/` — REST API (DRF) для статического фронтенда
+- `backend/stimul_ico/` — настройки проекта Django
+- `backend/stimuli/` — модели, формы, фильтры, шаблоны
+- `backend/templates/` — общие шаблоны (включая страницу входа)
+- `backend/static/` — стили для серверных шаблонов
+- `backend/api/` — REST API (DRF) для статического фронтенда
 - `frontend/` — статический клиент, публикуемый на GitHub Pages
 - `stimuli/management/commands/` — команды `import_employees` и `setup_roles`
 

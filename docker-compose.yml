@@ -9,6 +9,6 @@ services:
     env_file:
       - .env
     volumes:
-      - /Users/vladimirabramov/Stimul_ICO/docker_data/db.sqlite3:/app/stimul_ico/db.sqlite3
+      - /Users/vladimirabramov/Stimul_ICO/docker_data/db.sqlite3:/app/backend/db.sqlite3
       - /Users/vladimirabramov/Stimul_ICO/docker_data/staticfiles:/app/staticfiles
 
