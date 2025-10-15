@@ -1,0 +1,13 @@
+.git
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.env
+.venv
+.Turbo*
+.DS_Store
+frontend/dist
+media
+staticfiles
