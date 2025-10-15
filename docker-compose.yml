@@ -1,0 +1,14 @@
+services:
+  web:
+    build:
+      context: /Users/vladimirabramov/Stimul_ICO
+    image: stimul-ico:latest
+    container_name: stimul-ico
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - /Users/vladimirabramov/Stimul_ICO/docker_data/db.sqlite3:/app/stimul_ico/db.sqlite3
+      - /Users/vladimirabramov/Stimul_ICO/docker_data/staticfiles:/app/staticfiles
+
