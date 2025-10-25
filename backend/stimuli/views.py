@@ -807,6 +807,10 @@ class EmployeeExcelUploadView(LoginRequiredMixin, PermissionRequiredMixin, View)
             divisions_dict = {d.name: d for d in Division.objects.all()}
             positions_dict = {p.name: p for p in Position.objects.all()}
             
+            # Счетчики для автоматически созданных записей
+            auto_created_divisions = 0
+            auto_created_positions = 0
+            
             # Создаем словарь категорий для обработки как кодов, так и отображаемых названий
             category_dict = {}
             for code, display_name in Employee.Category.choices:
@@ -838,14 +842,31 @@ class EmployeeExcelUploadView(LoginRequiredMixin, PermissionRequiredMixin, View)
                     payment = ws.cell(row=row_num, column=14).value
                     justification = ws.cell(row=row_num, column=15).value
 
-                    # Валидация и преобразование данных
-                    if not division_name or division_name not in divisions_dict:
-                        errors.append(f"Строка {row_num}: Подразделение '{division_name}' не найдено")
+                    # Валидация и автоматическое создание недостающих записей
+                    if not division_name:
+                        errors.append(f"Строка {row_num}: Не указано подразделение")
                         continue
                     
-                    if not position_name or position_name not in positions_dict:
-                        errors.append(f"Строка {row_num}: Должность '{position_name}' не найдена")
+                    # Автоматически создаем подразделение если его нет
+                    if division_name not in divisions_dict:
+                        division_obj, created = Division.objects.get_or_create(name=division_name)
+                        divisions_dict[division_name] = division_obj
+                        if created:
+                            auto_created_divisions += 1
+                    
+                    if not position_name:
+                        errors.append(f"Строка {row_num}: Не указана должность")
                         continue
+                    
+                    # Автоматически создаем должность если её нет
+                    if position_name not in positions_dict:
+                        position_obj, created = Position.objects.get_or_create(
+                            name=position_name,
+                            defaults={'base_salary': 0}
+                        )
+                        positions_dict[position_name] = position_obj
+                        if created:
+                            auto_created_positions += 1
                     
                     if not category_code or category_code not in category_dict:
                         errors.append(f"Строка {row_num}: Неверная категория '{category_code}'")
@@ -923,6 +944,10 @@ class EmployeeExcelUploadView(LoginRequiredMixin, PermissionRequiredMixin, View)
                         deleted_count += 1
 
             # Формируем сообщения для пользователя
+            if auto_created_divisions > 0:
+                messages.info(request, f'Автоматически создано подразделений: {auto_created_divisions}')
+            if auto_created_positions > 0:
+                messages.info(request, f'Автоматически создано должностей: {auto_created_positions}')
             if created_count > 0:
                 messages.success(request, f'Создано новых сотрудников: {created_count}')
             if updated_count > 0:
