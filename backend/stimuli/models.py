@@ -12,6 +12,14 @@ class Employee(models.Model):
         PPS = 'ППС', _('Профессорско-преподавательский состав')
         OTHER = 'Другое', _('Другое')
 
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='employee_profile',
+        verbose_name='Пользователь',
+        blank=True,
+        null=True
+    )
     full_name = models.CharField('ФИО', max_length=255)
     division = models.ForeignKey('staffing.Division', on_delete=models.PROTECT, related_name='employees', verbose_name='Подразделение')
     position = models.ForeignKey('staffing.Position', on_delete=models.PROTECT, related_name='employees', verbose_name='Должность')

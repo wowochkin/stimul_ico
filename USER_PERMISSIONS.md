@@ -57,7 +57,7 @@ python manage.py create_test_users
 ### Назначение пользователя сотрудником
 
 1. Добавить пользователя в группу "Сотрудник"
-2. Создать соответствующую запись в модели `Employee` с именем, содержащим username пользователя
+2. Создать соответствующую запись в модели `Employee` и связать её с пользователем через поле `user`
 
 ## Техническая реализация
 
@@ -70,6 +70,17 @@ python manage.py create_test_users
 class UserDivision(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     division = models.ForeignKey('staffing.Division', on_delete=models.CASCADE)
+```
+
+#### Employee (обновлена)
+Добавлена прямая связь с пользователем для упрощения управления правами доступа.
+
+```python
+class Employee(models.Model):
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, blank=True, null=True)
+    full_name = models.CharField('ФИО', max_length=255)
+    division = models.ForeignKey('staffing.Division', on_delete=models.PROTECT)
+    # ... остальные поля
 ```
 
 ### Функции проверки прав

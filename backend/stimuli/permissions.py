@@ -76,12 +76,12 @@ def get_accessible_employees(user):
         user_division = get_user_division(user)
         if user_division:
             return Employee.objects.filter(division=user_division)
+        return Employee.objects.none()
     
-    # Сотрудники видят только себя (поиск по имени пользователя)
+    # Сотрудники видят только себя
     if is_employee(user):
-        # Пытаемся найти сотрудника по имени пользователя
         try:
-            return Employee.objects.filter(full_name__icontains=user.username)
+            return Employee.objects.filter(user=user)
         except Exception:
             return Employee.objects.none()
     

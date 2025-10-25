@@ -13,6 +13,7 @@ class InternalAssignmentInline(admin.TabularInline):
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = (
         'full_name',
+        'user',
         'division',
         'position',
         'category',
@@ -22,8 +23,8 @@ class EmployeeAdmin(admin.ModelAdmin):
         'payment',
     )
     list_filter = ('category', 'division', 'position')
-    search_fields = ('full_name', 'division__name', 'position__name')
-    autocomplete_fields = ('division', 'position')
+    search_fields = ('full_name', 'user__username', 'division__name', 'position__name')
+    autocomplete_fields = ('user', 'division', 'position')
     inlines = [InternalAssignmentInline]
 
     @admin.display(description='Расчётный оклад')
