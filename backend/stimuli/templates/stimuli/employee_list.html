@@ -6,9 +6,21 @@
 <div class="card content-card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
         <h2>Сотрудники</h2>
-        {% if perms.stimuli.add_employee %}
-            <a class="btn btn-primary" href="{% url 'employee-add' %}">Добавить сотрудника</a>
-        {% endif %}
+        <div style="display:flex; gap:8px;">
+            {% if perms.stimuli.view_employee %}
+                <a class="btn btn-success" href="{% url 'employee-excel-template' %}">
+                    <i class="fas fa-download"></i>
+                    Скачать Excel
+                </a>
+            {% endif %}
+            {% if perms.stimuli.add_employee %}
+                <a class="btn btn-info" href="{% url 'employee-excel-upload' %}">
+                    <i class="fas fa-upload"></i>
+                    Загрузить Excel
+                </a>
+                <a class="btn btn-primary" href="{% url 'employee-add' %}">Добавить сотрудника</a>
+            {% endif %}
+        </div>
     </div>
     <div class="filter-wrapper">
     <form method="get" class="filter-form">

@@ -1,10 +1,49 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
 from django.forms import inlineformset_factory
 
 from one_time_payments.models import RequestCampaign
 
 from .models import Employee, InternalAssignment, StimulusRequest
+
+
+class EmployeeExcelUploadForm(forms.Form):
+    """Форма для загрузки Excel файла с данными сотрудников"""
+    excel_file = forms.FileField(
+        label='Excel файл',
+        help_text='Выберите файл Excel (.xlsx, .xls) с данными сотрудников',
+        widget=forms.FileInput(attrs={
+            'accept': '.xlsx,.xls',
+            'class': 'form-control-file'
+        })
+    )
+    
+    sync_mode = forms.ChoiceField(
+        label='Режим синхронизации',
+        choices=[
+            ('add_update', 'Только добавить/обновить записи'),
+            ('full_sync', 'Полная синхронизация (удалить отсутствующие записи)'),
+        ],
+        initial='add_update',
+        widget=forms.RadioSelect,
+        help_text='Выберите режим обработки файла'
+    )
+
+    def clean_excel_file(self):
+        file = self.cleaned_data.get('excel_file')
+        if not file:
+            raise ValidationError('Не выбран файл для загрузки.')
+        
+        # Проверяем расширение файла
+        if not file.name.endswith(('.xlsx', '.xls')):
+            raise ValidationError('Поддерживаются только файлы Excel (.xlsx, .xls).')
+        
+        # Проверяем размер файла (10 МБ)
+        if file.size > 10 * 1024 * 1024:
+            raise ValidationError('Размер файла не должен превышать 10 МБ.')
+        
+        return file
 
 
 class EmployeeForm(forms.ModelForm):

@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Загрузка сотрудников из Excel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-file-excel"></i>
+                        Загрузка сотрудников из Excel
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="alert alert-info">
+                                <h5><i class="fas fa-info-circle"></i> Инструкция по загрузке</h5>
+                                <ol>
+                                    <li>Сначала скачайте актуальный шаблон Excel с данными сотрудников</li>
+                                    <li>Отредактируйте данные в Excel файле:
+                                        <ul>
+                                            <li>Добавьте новых сотрудников</li>
+                                            <li>Измените данные существующих сотрудников</li>
+                                            <li>Удалите строки с сотрудниками, которых больше нет (при полной синхронизации)</li>
+                                        </ul>
+                                    </li>
+                                    <li>Выберите режим синхронизации</li>
+                                    <li>Сохраните файл и загрузите его через форму ниже</li>
+                                    <li>Система автоматически синхронизирует данные согласно выбранному режиму</li>
+                                </ol>
+                            </div>
+
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label for="{{ form.excel_file.id_for_label }}">{{ form.excel_file.label }}</label>
+                                    {{ form.excel_file }}
+                                    {% if form.excel_file.help_text %}
+                                        <small class="form-text text-muted">{{ form.excel_file.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.excel_file.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.excel_file.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>{{ form.sync_mode.label }}</label>
+                                    {{ form.sync_mode }}
+                                    {% if form.sync_mode.help_text %}
+                                        <small class="form-text text-muted">{{ form.sync_mode.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.sync_mode.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.sync_mode.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-upload"></i>
+                                        Загрузить файл
+                                    </button>
+                                    <a href="{% url 'employee-list' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i>
+                                        Назад к списку
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-download"></i>
+                                        Скачать шаблон
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">
+                                        Скачайте актуальный шаблон Excel с данными всех сотрудников и справочниками.
+                                    </p>
+                                    <a href="{% url 'employee-excel-template' %}" class="btn btn-success btn-block">
+                                        <i class="fas fa-file-excel"></i>
+                                        Скачать шаблон Excel
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-sync"></i>
+                                        Режимы синхронизации
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <strong>Только добавить/обновить:</strong>
+                                        <ul class="small">
+                                            <li>Создает новых сотрудников</li>
+                                            <li>Обновляет существующих</li>
+                                            <li>Не удаляет записи</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <strong>Полная синхронизация:</strong>
+                                        <ul class="small">
+                                            <li>Создает новых сотрудников</li>
+                                            <li>Обновляет существующих</li>
+                                            <li><span class="text-danger">Удаляет сотрудников, отсутствующих в файле</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        Важные замечания
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-check text-success"></i> ФИО должно быть уникальным</li>
+                                        <li><i class="fas fa-check text-success"></i> Подразделения и должности должны существовать в системе</li>
+                                        <li><i class="fas fa-check text-success"></i> Категории: АУП, ППС, Другое (или полные названия)</li>
+                                        <li><i class="fas fa-info-circle text-info"></i> Поддерживаемые категории:<br>
+                                            • АУП / Административно-управленческий персонал<br>
+                                            • ППС / Профессорско-преподавательский состав<br>
+                                            • Другое
+                                        </li>
+                                        <li><i class="fas fa-check text-success"></i> Даты в формате ДД.ММ.ГГГГ</li>
+                                        <li><i class="fas fa-check text-success"></i> Числовые значения с точкой как разделителем</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.querySelector('input[type="file"]');
+    const submitButton = document.querySelector('button[type="submit"]');
+    
+    if (fileInput && submitButton) {
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                // Проверяем размер файла (10 МБ)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('Размер файла не должен превышать 10 МБ');
+                    this.value = '';
+                    return;
+                }
+                
+                // Проверяем расширение файла
+                const fileName = file.name.toLowerCase();
+                if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+                    alert('Поддерживаются только файлы Excel (.xlsx, .xls)');
+                    this.value = '';
+                    return;
+                }
+                
+                submitButton.disabled = false;
+            } else {
+                submitButton.disabled = true;
+            }
+        });
+        
+        // Изначально кнопка отключена, если нет файла
+        if (!fileInput.files || fileInput.files.length === 0) {
+            submitButton.disabled = true;
+        }
+    }
+});
+</script>
+{% endblock %}
