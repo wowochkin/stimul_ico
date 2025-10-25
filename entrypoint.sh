@@ -93,15 +93,7 @@ fi
 
 echo "✅ App test прошел успешно!"
 
-# Запускаем Gunicorn с подробным логированием
+# Запускаем Gunicorn с конфигом
 echo "🚀 Запускаем Gunicorn на порту ${PORT:-8000}..."
-exec gunicorn --chdir backend stimul_ico.wsgi:application \
-    --bind 0.0.0.0:${PORT:-8000} \
-    --workers ${GUNICORN_WORKERS:-3} \
-    --timeout 120 \
-    --keep-alive 2 \
-    --max-requests 1000 \
-    --max-requests-jitter 100 \
-    --log-level debug \
-    --access-logfile - \
-    --error-logfile -
+cd /app
+exec gunicorn --config gunicorn.conf.py stimul_ico.wsgi:application
