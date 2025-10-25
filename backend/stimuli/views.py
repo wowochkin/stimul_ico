@@ -419,7 +419,21 @@ class StimulusRequestBulkCreateView(LoginRequiredMixin, PermissionRequiredMixin,
     template_name = 'stimuli/request_bulk_create.html'
 
     def get_divisions(self):
-        return Division.objects.order_by('name')
+        user = self.request.user
+        
+        # Администраторы видят все подразделения
+        if user.is_staff:
+            return Division.objects.order_by('name')
+        
+        # Руководители департамента видят только свое подразделение
+        if is_department_manager(user):
+            user_division = get_user_division(user)
+            if user_division:
+                return Division.objects.filter(id=user_division.id).order_by('name')
+            return Division.objects.none()
+        
+        # Сотрудники не должны видеть подразделения в массовом создании
+        return Division.objects.none()
 
     def get_campaigns(self):
         return RequestCampaign.objects.order_by('-opens_at', 'name')
@@ -427,6 +441,13 @@ class StimulusRequestBulkCreateView(LoginRequiredMixin, PermissionRequiredMixin,
     def get(self, request, *args, **kwargs):
         division_id = request.GET.get('division')
         campaign_id = request.GET.get('campaign')
+        
+        # Для руководителей департамента автоматически выбираем их подразделение
+        if not division_id and is_department_manager(request.user):
+            user_division = get_user_division(request.user)
+            if user_division:
+                division_id = str(user_division.id)
+        
         context = self._build_context(division_id, campaign_id=campaign_id)
         return self.render_to_response(context)
 
