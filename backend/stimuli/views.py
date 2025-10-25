@@ -402,6 +402,7 @@ class TestView(View):
     """Простая тестовая страница"""
     
     def get(self, request, *args, **kwargs):
+        import os
         return HttpResponse("""
         <html>
         <head><title>Test Page</title></head>
@@ -409,7 +410,11 @@ class TestView(View):
             <h1>✅ Django работает!</h1>
             <p>Время: """ + str(datetime.now()) + """</p>
             <p>Пользователь: """ + str(request.user) + """</p>
+            <p>Авторизован: """ + str(request.user.is_authenticated) + """</p>
             <p>IP: """ + str(request.META.get('REMOTE_ADDR', 'Unknown')) + """</p>
+            <p>Host: """ + str(request.META.get('HTTP_HOST', 'Unknown')) + """</p>
+            <p>PORT env: """ + str(os.environ.get('PORT', 'Not set')) + """</p>
+            <p>DEBUG: """ + str(os.environ.get('DJANGO_DEBUG', 'Not set')) + """</p>
             <p><a href="/">Главная</a> | <a href="/admin/">Админ</a> | <a href="/health/">Health</a></p>
         </body>
         </html>

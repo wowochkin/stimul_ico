@@ -1,9 +1,15 @@
 from django.urls import path
+from django.http import HttpResponse
 
 from . import views
 
+# Супер-простой view для тестирования
+def simple_test(request):
+    return HttpResponse("OK - Simple test works!", content_type='text/plain')
+
 urlpatterns = [
     path('', views.HomeRedirectView.as_view(), name='home'),
+    path('simple/', simple_test, name='simple'),
     path('test/', views.TestView.as_view(), name='test'),
     path('employees/', views.EmployeeListView.as_view(), name='employee-list'),
     path('employees/add/', views.EmployeeCreateView.as_view(), name='employee-add'),
