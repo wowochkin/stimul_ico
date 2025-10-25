@@ -30,8 +30,8 @@ keepalive = 2
 max_requests = 1000
 max_requests_jitter = 100
 
-# Рабочая директория
-chdir = '/app/backend'
+# Рабочая директория - НЕ ИСПОЛЬЗУЕМ, будет установлена через entrypoint.sh
+# chdir = '/app/backend'
 
 # Логирование
 accesslog = '-'  # stdout
@@ -68,44 +68,59 @@ daemon = False
 
 def on_starting(server):
     """Вызывается перед запуском сервера"""
-    print(f"🚀 Gunicorn запускается на {bind}")
-    print(f"👷 Количество workers: {workers}")
+    try:
+        import sys
+        print(f"🚀 Gunicorn запускается на {bind}", file=sys.stderr, flush=True)
+        print(f"👷 Количество workers: {workers}", file=sys.stderr, flush=True)
+    except:
+        pass
 
 def when_ready(server):
     """Вызывается когда сервер готов принимать запросы"""
-    print("✅ Gunicorn готов принимать запросы")
+    try:
+        import sys
+        print("✅ Gunicorn готов принимать запросы", file=sys.stderr, flush=True)
+    except:
+        pass
 
 def on_exit(server):
     """Вызывается при остановке сервера"""
-    print("👋 Gunicorn завершает работу")
+    try:
+        import sys
+        print("👋 Gunicorn завершает работу", file=sys.stderr, flush=True)
+    except:
+        pass
 
 def post_worker_init(worker):
     """Вызывается после инициализации каждого worker'а"""
     import sys
-    print(f"✅ Worker {worker.pid} инициализирован", file=sys.stderr, flush=True)
     try:
-        # Пробуем импортировать Django, чтобы проверить что всё ОК
-        import django
-        from django.conf import settings
-        print(f"✅ Worker {worker.pid}: Django {django.get_version()} загружен", file=sys.stderr, flush=True)
-        print(f"✅ Worker {worker.pid}: DEBUG={settings.DEBUG}", file=sys.stderr, flush=True)
+        print(f"✅ Worker {worker.pid} инициализирован", file=sys.stderr, flush=True)
     except Exception as e:
-        print(f"❌ Worker {worker.pid}: Ошибка загрузки Django: {e}", file=sys.stderr, flush=True)
-        import traceback
-        traceback.print_exc(file=sys.stderr)
+        # Даже если что-то пошло не так, не падаем
+        pass
 
 def worker_int(worker):
     """Вызывается когда worker получает SIGINT или SIGQUIT"""
-    import sys
-    print(f"⚠️  Worker {worker.pid} получил сигнал прерывания", file=sys.stderr, flush=True)
+    try:
+        import sys
+        print(f"⚠️  Worker {worker.pid} получил сигнал прерывания", file=sys.stderr, flush=True)
+    except:
+        pass
 
 def worker_abort(worker):
     """Вызывается когда worker получает SIGABRT"""
-    import sys
-    print(f"❌ Worker {worker.pid} аварийно завершен", file=sys.stderr, flush=True)
+    try:
+        import sys
+        print(f"❌ Worker {worker.pid} аварийно завершен", file=sys.stderr, flush=True)
+    except:
+        pass
     
 def worker_exit(server, worker):
     """Вызывается когда worker выходит"""
-    import sys
-    print(f"👋 Worker {worker.pid} завершил работу", file=sys.stderr, flush=True)
+    try:
+        import sys
+        print(f"👋 Worker {worker.pid} завершил работу", file=sys.stderr, flush=True)
+    except:
+        pass
 

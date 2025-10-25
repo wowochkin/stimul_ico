@@ -97,8 +97,10 @@ echo "✅ App test прошел успешно!"
 echo "🚀 Запускаем Gunicorn на порту ${PORT:-8000}..."
 echo "📡 Gunicorn будет слушать: 0.0.0.0:${PORT:-8000}"
 echo "🔧 Используем конфиг: /app/gunicorn.conf.py"
+echo "📂 Переходим в /app/backend для импорта Django"
 
-cd /app
+# Переходим в backend директорию для правильного импорта
+cd /app/backend
 
-# Запускаем Gunicorn
-exec gunicorn --config gunicorn.conf.py stimul_ico.wsgi:application
+# Запускаем Gunicorn с конфигом из родительской директории
+exec gunicorn --config /app/gunicorn.conf.py stimul_ico.wsgi:application
