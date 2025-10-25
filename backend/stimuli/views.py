@@ -1007,8 +1007,3 @@ class EmployeeExcelUploadView(LoginRequiredMixin, PermissionRequiredMixin, View)
         from django.shortcuts import render
         return render(self.request, self.template_name, context)
 
-
-class HealthCheckView(View):
-    """Максимально простой healthcheck endpoint для Railway"""
-    def get(self, request, *args, **kwargs):
-        return HttpResponse("OK", status=200)

@@ -24,5 +24,4 @@ urlpatterns = [
     path('requests/<int:pk>/update-status/', views.StimulusRequestStatusUpdateView.as_view(), name='request-status-update'),
     path('requests/<int:pk>/delete/', views.StimulusRequestDeleteView.as_view(), name='request-delete'),
     path('requests/bulk-delete/', views.StimulusRequestBulkDeleteView.as_view(), name='request-bulk-delete'),
-    path('health/', views.HealthCheckView.as_view(), name='health'),
 ]
