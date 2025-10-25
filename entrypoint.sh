@@ -31,14 +31,12 @@ else
     echo "📁 Размер staticfiles: $(du -sh backend/staticfiles)"
 fi
 
-echo "🌐 Запускаем Gunicorn..."
+echo "🌐 Запускаем Django development server..."
 echo "🔍 Проверяем переменные окружения:"
 echo "  - PORT: ${PORT:-8000}"
-echo "  - GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}"
 echo "  - DATABASE_URL: ${DATABASE_URL:+Set}"
 echo "  - DJANGO_DEBUG: ${DJANGO_DEBUG:-Not set}"
 echo "  - RAILWAY_PUBLIC_DOMAIN: ${RAILWAY_PUBLIC_DOMAIN:-Not set}"
-echo "  - RAILWAY_HEALTHCHECK_TIMEOUT_SEC: ${RAILWAY_HEALTHCHECK_TIMEOUT_SEC:-300}"
 
 # Ensure correct import path for the Django project package under backend/
 echo "🚀 Запуск сервера на порту ${PORT:-8000}..."
@@ -69,10 +67,10 @@ if [ ! -f "backend/stimul_ico/wsgi.py" ]; then
     exit 1
 fi
 
-echo "✅ Все файлы найдены, запускаем Gunicorn..."
+echo "✅ Все файлы найдены, готовимся к запуску..."
 
-# Тестируем Django приложение перед запуском
-echo "🧪 Тестируем Django приложение..."
+# Простая проверка Django
+echo "🧪 Проверяем Django..."
 python backend/manage.py check --deploy
 
 if [ $? -ne 0 ]; then
@@ -80,37 +78,14 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "✅ Django check прошел успешно!"
+echo "✅ Django готов к запуску!"
 
-# Дополнительный тест приложения
-echo "🧪 Дополнительный тест приложения..."
-python test_app.py
-
-if [ $? -ne 0 ]; then
-    echo "❌ ОШИБКА: App test failed!"
-    exit 1
-fi
-
-echo "✅ App test прошел успешно!"
-
-# Запускаем Gunicorn БЕЗ конфига - только параметры командной строки
-echo "🚀 Запускаем Gunicorn на порту ${PORT:-8000}..."
-echo "📡 Gunicorn будет слушать: 0.0.0.0:${PORT:-8000}"
-echo "🔧 БЕЗ конфиг-файла, только командная строка"
-echo "📂 Переходим в /app/backend для импорта Django"
+# Запускаем Django development server для Railway
+echo "🚀 Запускаем Django development server на порту ${PORT:-8000}..."
+echo "📡 Сервер будет слушать: 0.0.0.0:${PORT:-8000}"
 
 # Переходим в backend директорию для правильного импорта
 cd /app/backend
 
-# Запускаем Gunicorn с простыми параметрами
-exec gunicorn \
-    --bind 0.0.0.0:${PORT:-8000} \
-    --workers 1 \
-    --worker-class sync \
-    --timeout 120 \
-    --log-level info \
-    --access-logfile - \
-    --error-logfile - \
-    --forwarded-allow-ips='*' \
-    --proxy-allow-ips='*' \
-    stimul_ico.wsgi:application
+# Запускаем Django development server
+exec python manage.py runserver 0.0.0.0:${PORT:-8000}

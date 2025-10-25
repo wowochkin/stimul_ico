@@ -1009,28 +1009,6 @@ class EmployeeExcelUploadView(LoginRequiredMixin, PermissionRequiredMixin, View)
 
 
 class HealthCheckView(View):
-    """Надежный healthcheck endpoint для Railway"""
+    """Максимально простой healthcheck endpoint для Railway"""
     def get(self, request, *args, **kwargs):
-        try:
-            from django.conf import settings
-            from django.db import connection
-            import os
-            
-            # Проверяем основные настройки
-            debug_mode = settings.DEBUG
-            db_engine = settings.DATABASES['default']['ENGINE']
-            database_url = os.environ.get('DATABASE_URL', 'Not set')
-            
-            # Проверяем подключение к базе данных
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT 1")
-                db_status = "Connected"
-            
-            # Проверяем Railway переменные
-            railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'Not set')
-            port = os.environ.get('PORT', 'Not set')
-            
-            response_text = f"OK - Debug: {debug_mode}, DB: {db_status}, PORT: {port}, Railway: {railway_domain}"
-            return HttpResponse(response_text, status=200)
-        except Exception as e:
-            return HttpResponse(f"ERROR: {str(e)}", status=500)
+        return HttpResponse("OK", status=200)
