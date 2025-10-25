@@ -1,13 +1,36 @@
-.git
-__pycache__
+# Исключаем локальную базу данных из Docker образа
+backend/db.sqlite3
+backend/db.sqlite3-journal
+backend/db.sqlite3-wal
+backend/db.sqlite3-shm
+
+# Исключаем локальные данные Docker
+docker_data/
+.docker/
+
+# Исключаем системные файлы
+.git/
+.gitignore
+*.log
 *.pyc
-*.pyo
-*.pyd
-*.sqlite3
-.env
-.venv
-.Turbo*
+__pycache__/
+.pytest_cache/
+.coverage
+.venv/
+venv/
+env/
+
+# Исключаем IDE файлы
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Исключаем временные файлы
+*.tmp
+*.temp
 .DS_Store
-frontend/dist
-media
-staticfiles
+Thumbs.db
+
+# Исключаем статические файлы (будут собраны в контейнере)
+backend/staticfiles/

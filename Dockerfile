@@ -15,10 +15,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend /app/backend
 COPY frontend /app/frontend
 COPY README.md requirements.txt /app/
-
-COPY backend /app/backend
-COPY frontend /app/frontend
-COPY README.md requirements.txt /app/
 COPY setup.sh /app/setup.sh
 RUN chmod +x /app/setup.sh
 

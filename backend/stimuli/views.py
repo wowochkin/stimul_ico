@@ -346,11 +346,20 @@ class StimulusRequestUpdateView(LoginRequiredMixin, generic.UpdateView):
 class StimulusRequestStatusUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'stimuli.change_stimulusrequest'
 
+    def get(self, request, *args, **kwargs):
+        # Редиректим всех пользователей на список заявок
+        return redirect('request-list')
+
     def post(self, request, *args, **kwargs):
         instance = get_object_or_404(StimulusRequest, pk=kwargs['pk'])
         
         # Проверяем, может ли пользователь изменять статус этой заявки
         if not can_change_request_status(request.user, instance):
+            # Для сотрудников и руководителей департамента просто редиректим без сообщения об ошибке
+            from .permissions import is_employee, is_department_manager
+            if is_employee(request.user) or is_department_manager(request.user):
+                return redirect('request-list')
+            # Для остальных показываем ошибку
             messages.error(request, 'У вас нет прав на изменение статуса этой заявки.')
             return redirect('request-list')
         

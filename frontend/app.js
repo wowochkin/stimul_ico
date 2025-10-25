@@ -354,15 +354,19 @@
     async function createRequest(event) {
         event.preventDefault();
         const formData = new FormData(elements.requestForm);
+        const campaignValue = formData.get('campaign');
+        
+        if (!campaignValue) {
+            showMessage('error', 'Необходимо выбрать кампанию.');
+            return;
+        }
+        
         const payload = {
             employee: Number(formData.get('employee')),
             amount: Number(formData.get('amount')),
             justification: formData.get('justification'),
+            campaign: Number(campaignValue),
         };
-        const campaignValue = formData.get('campaign');
-        if (campaignValue) {
-            payload.campaign = Number(campaignValue);
-        }
 
         try {
             await apiFetch('/api/requests/', {
