@@ -4,8 +4,8 @@
 import os
 import multiprocessing
 
-# Привязка к адресу и порту
-bind = f"0.0.0.0:{os.environ.get('PORT', '8000')}"
+# Привязка к адресу и порту - УБРАНО, будет из командной строки
+# bind = f"0.0.0.0:{os.environ.get('PORT', '8000')}"
 
 # Количество worker процессов  
 # Временно используем 1 для диагностики
@@ -63,14 +63,13 @@ secure_scheme_headers = {
     'X-FORWARDED-SSL': 'on'
 }
 
-# Отключаем daemon mode
-daemon = False
-
 def on_starting(server):
     """Вызывается перед запуском сервера"""
     try:
         import sys
-        print(f"🚀 Gunicorn запускается на {bind}", file=sys.stderr, flush=True)
+        import os
+        port = os.environ.get('PORT', '8000')
+        print(f"🚀 Gunicorn запускается на 0.0.0.0:{port}", file=sys.stderr, flush=True)
         print(f"👷 Количество workers: {workers}", file=sys.stderr, flush=True)
     except:
         pass

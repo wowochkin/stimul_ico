@@ -93,14 +93,24 @@ fi
 
 echo "✅ App test прошел успешно!"
 
-# Запускаем Gunicorn с конфигом
+# Запускаем Gunicorn БЕЗ конфига - только параметры командной строки
 echo "🚀 Запускаем Gunicorn на порту ${PORT:-8000}..."
 echo "📡 Gunicorn будет слушать: 0.0.0.0:${PORT:-8000}"
-echo "🔧 Используем конфиг: /app/gunicorn.conf.py"
+echo "🔧 БЕЗ конфиг-файла, только командная строка"
 echo "📂 Переходим в /app/backend для импорта Django"
 
 # Переходим в backend директорию для правильного импорта
 cd /app/backend
 
-# Запускаем Gunicorn с конфигом из родительской директории
-exec gunicorn --config /app/gunicorn.conf.py stimul_ico.wsgi:application
+# Запускаем Gunicorn с простыми параметрами
+exec gunicorn \
+    --bind 0.0.0.0:${PORT:-8000} \
+    --workers 1 \
+    --worker-class sync \
+    --timeout 120 \
+    --log-level info \
+    --access-logfile - \
+    --error-logfile - \
+    --forwarded-allow-ips='*' \
+    --proxy-allow-ips='*' \
+    stimul_ico.wsgi:application
