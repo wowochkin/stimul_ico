@@ -134,7 +134,7 @@ class StimulusRequestForm(forms.ModelForm):
                 status=RequestCampaign.Status.DRAFT
             ).order_by('-opens_at', 'name')
         
-        self.fields['campaign'].required = False
+        self.fields['campaign'].required = True
         
         # Ограничиваем выбор сотрудников в зависимости от роли пользователя
         if user:
@@ -149,7 +149,9 @@ class StimulusRequestForm(forms.ModelForm):
 
     def clean_campaign(self):
         campaign = self.cleaned_data.get('campaign')
-        if campaign and campaign.status == campaign.Status.DRAFT:
+        if not campaign:
+            raise forms.ValidationError('Необходимо выбрать кампанию.')
+        if campaign.status == campaign.Status.DRAFT:
             raise forms.ValidationError('Нельзя привязывать заявку к кампании в статусе черновика.')
         return campaign
 
