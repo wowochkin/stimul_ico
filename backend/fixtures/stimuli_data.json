@@ -1,0 +1,134 @@
+[
+{
+  "model": "stimuli.employee",
+  "pk": 204,
+  "fields": {
+    "user": 8,
+    "full_name": "Иван Петров",
+    "division": 8,
+    "position": 14,
+    "category": "АУП",
+    "rate": "1.000",
+    "allowance_amount": "0.00",
+    "allowance_reason": "",
+    "allowance_until": null,
+    "payment": "0.00",
+    "justification": "",
+    "created_at": "2025-10-25T19:41:06.797Z",
+    "updated_at": "2025-10-25T19:41:06.797Z"
+  }
+},
+{
+  "model": "stimuli.employee",
+  "pk": 205,
+  "fields": {
+    "user": 9,
+    "full_name": "Анна Сидорова",
+    "division": 8,
+    "position": 13,
+    "category": "ППС",
+    "rate": "1.000",
+    "allowance_amount": "0.00",
+    "allowance_reason": "",
+    "allowance_until": null,
+    "payment": "0.00",
+    "justification": "1. 1000,00 ₽ — На рассмотрении (Анна Сидорова) — ���������������� ������������",
+    "created_at": "2025-10-25T19:41:06.799Z",
+    "updated_at": "2025-10-25T19:41:06.799Z"
+  }
+},
+{
+  "model": "stimuli.employee",
+  "pk": 206,
+  "fields": {
+    "user": 10,
+    "full_name": "Мария Козлова",
+    "division": 9,
+    "position": 14,
+    "category": "АУП",
+    "rate": "1.000",
+    "allowance_amount": "0.00",
+    "allowance_reason": "",
+    "allowance_until": null,
+    "payment": "0.00",
+    "justification": "",
+    "created_at": "2025-10-25T19:41:06.800Z",
+    "updated_at": "2025-10-25T19:41:06.800Z"
+  }
+},
+{
+  "model": "stimuli.employee",
+  "pk": 207,
+  "fields": {
+    "user": 11,
+    "full_name": "Дмитрий Иванов",
+    "division": 9,
+    "position": 15,
+    "category": "ППС",
+    "rate": "1.000",
+    "allowance_amount": "0.00",
+    "allowance_reason": "",
+    "allowance_until": null,
+    "payment": "0.00",
+    "justification": "1. 2000,00 ₽ — На рассмотрении (Дмитрий Иванов) — ���������������� ������������ ��������������������",
+    "created_at": "2025-10-25T19:41:06.801Z",
+    "updated_at": "2025-10-25T19:41:06.801Z"
+  }
+},
+{
+  "model": "stimuli.stimulusrequest",
+  "pk": 8,
+  "fields": {
+    "employee": 205,
+    "requested_by": 9,
+    "campaign": 5,
+    "amount": "1000.00",
+    "justification": "���������������� ������������",
+    "status": "pending",
+    "admin_comment": "",
+    "archived_at": null,
+    "created_at": "2025-10-25T19:59:00.546Z",
+    "updated_at": "2025-10-25T19:59:00.546Z"
+  }
+},
+{
+  "model": "stimuli.stimulusrequest",
+  "pk": 9,
+  "fields": {
+    "employee": 207,
+    "requested_by": 11,
+    "campaign": 5,
+    "amount": "2000.00",
+    "justification": "���������������� ������������ ��������������������",
+    "status": "pending",
+    "admin_comment": "",
+    "archived_at": null,
+    "created_at": "2025-10-25T19:59:10.192Z",
+    "updated_at": "2025-10-25T19:59:10.192Z"
+  }
+},
+{
+  "model": "stimuli.userdivision",
+  "pk": 3,
+  "fields": {
+    "user": 8,
+    "division": 8
+  }
+},
+{
+  "model": "stimuli.userdivision",
+  "pk": 4,
+  "fields": {
+    "user": 10,
+    "division": 9
+  }
+},
+{
+  "model": "stimuli.userdivision",
+  "pk": 6,
+  "fields": {
+    "user": 12,
+    "division": 7
+  }
+}
+]

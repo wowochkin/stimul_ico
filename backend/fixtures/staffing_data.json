@@ -1,0 +1,280 @@
+[
+{
+  "model": "staffing.division",
+  "pk": 1,
+  "fields": {
+    "name": "ИЦО"
+  }
+},
+{
+  "model": "staffing.division",
+  "pk": 2,
+  "fields": {
+    "name": "Университетский центр цифровых технологий"
+  }
+},
+{
+  "model": "staffing.division",
+  "pk": 3,
+  "fields": {
+    "name": "Педагогический центр \"STEAM-ПАРК\""
+  }
+},
+{
+  "model": "staffing.division",
+  "pk": 4,
+  "fields": {
+    "name": "Офис учебно-методического сопровождения образовательного процесса"
+  }
+},
+{
+  "model": "staffing.division",
+  "pk": 5,
+  "fields": {
+    "name": "Департамент математики и физики"
+  }
+},
+{
+  "model": "staffing.division",
+  "pk": 6,
+  "fields": {
+    "name": "Департамент информатики, управления и технологий"
+  }
+},
+{
+  "model": "staffing.division",
+  "pk": 7,
+  "fields": {
+    "name": "Департамент информатизации образования"
+  }
+},
+{
+  "model": "staffing.division",
+  "pk": 8,
+  "fields": {
+    "name": "Отдел разработки"
+  }
+},
+{
+  "model": "staffing.division",
+  "pk": 9,
+  "fields": {
+    "name": "Отдел маркетинга"
+  }
+},
+{
+  "model": "staffing.division",
+  "pk": 10,
+  "fields": {
+    "name": "���������������� ����������"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 1,
+  "fields": {
+    "name": "Директор института",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 2,
+  "fields": {
+    "name": "Заведующий хозяйством",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 3,
+  "fields": {
+    "name": "Заместитель директора института",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 4,
+  "fields": {
+    "name": "Специалист",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 5,
+  "fields": {
+    "name": "Руководитель центра",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 6,
+  "fields": {
+    "name": "Делопроизводитель",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 7,
+  "fields": {
+    "name": "Техник",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 8,
+  "fields": {
+    "name": "Профессор",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 9,
+  "fields": {
+    "name": "Ассистент",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 10,
+  "fields": {
+    "name": "Доцент",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 11,
+  "fields": {
+    "name": "Старший преподаватель",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 12,
+  "fields": {
+    "name": "Преподаватель",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 13,
+  "fields": {
+    "name": "Разработчик",
+    "base_salary": "100000.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 14,
+  "fields": {
+    "name": "Руководитель отдела",
+    "base_salary": "150000.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 15,
+  "fields": {
+    "name": "Маркетолог",
+    "base_salary": "80000.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 16,
+  "fields": {
+    "name": "��������-������������������������",
+    "base_salary": "100000.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 17,
+  "fields": {
+    "name": "��������-������������������",
+    "base_salary": "80000.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 18,
+  "fields": {
+    "name": "Руководитель департамента",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 19,
+  "fields": {
+    "name": "Заместитель руководителя",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 20,
+  "fields": {
+    "name": "Начальник отдела",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 21,
+  "fields": {
+    "name": "Старший научный сотрудник",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 22,
+  "fields": {
+    "name": "Научный сотрудник",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 23,
+  "fields": {
+    "name": "Инженер",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 24,
+  "fields": {
+    "name": "Программист",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 25,
+  "fields": {
+    "name": "Системный администратор",
+    "base_salary": "0.00"
+  }
+},
+{
+  "model": "staffing.position",
+  "pk": 26,
+  "fields": {
+    "name": "Методист",
+    "base_salary": "0.00"
+  }
+}
+]
