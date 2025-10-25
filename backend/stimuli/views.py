@@ -398,9 +398,45 @@ class StimulusRequestDeleteView(LoginRequiredMixin, generic.DeleteView):
         return response
 
 
-class HomeRedirectView(LoginRequiredMixin, View):
-
+class TestView(View):
+    """Простая тестовая страница"""
+    
     def get(self, request, *args, **kwargs):
+        return HttpResponse("""
+        <html>
+        <head><title>Test Page</title></head>
+        <body>
+            <h1>✅ Django работает!</h1>
+            <p>Время: """ + str(datetime.now()) + """</p>
+            <p>Пользователь: """ + str(request.user) + """</p>
+            <p>IP: """ + str(request.META.get('REMOTE_ADDR', 'Unknown')) + """</p>
+            <p><a href="/">Главная</a> | <a href="/admin/">Админ</a> | <a href="/health/">Health</a></p>
+        </body>
+        </html>
+        """, content_type='text/html')
+
+
+class HomeRedirectView(View):
+    """Главная страница с проверкой аутентификации"""
+    
+    def get(self, request, *args, **kwargs):
+        # Если пользователь не авторизован, показываем простую страницу
+        if not request.user.is_authenticated:
+            return HttpResponse("""
+            <html>
+            <head><title>Stimul ICO</title></head>
+            <body>
+                <h1>Добро пожаловать в Stimul ICO!</h1>
+                <p>Приложение успешно запущено на Railway.</p>
+                <p><a href="/admin/">Админ панель</a></p>
+                <p><a href="/accounts/login/">Войти в систему</a></p>
+                <p><a href="/health/">Health Check</a></p>
+                <p><a href="/test/">Тестовая страница</a></p>
+            </body>
+            </html>
+            """, content_type='text/html')
+        
+        # Если авторизован, перенаправляем как раньше
         if request.user.has_perm('stimuli.view_employee'):
             return redirect('employee-list')
         return redirect('request-list')

@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path('', views.HomeRedirectView.as_view(), name='home'),
+    path('test/', views.TestView.as_view(), name='test'),
     path('employees/', views.EmployeeListView.as_view(), name='employee-list'),
     path('employees/add/', views.EmployeeCreateView.as_view(), name='employee-add'),
     path('employees/<int:pk>/edit/', views.EmployeeUpdateView.as_view(), name='employee-edit'),
