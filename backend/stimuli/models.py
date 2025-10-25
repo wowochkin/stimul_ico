@@ -154,3 +154,26 @@ class StimulusRequest(models.Model):
     @property
     def is_archived(self) -> bool:
         return self.status == self.Status.ARCHIVED
+
+
+class UserDivision(models.Model):
+    """Связь пользователя с подразделением для определения прав доступа"""
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='user_division',
+        verbose_name='Пользователь'
+    )
+    division = models.ForeignKey(
+        'staffing.Division',
+        on_delete=models.CASCADE,
+        related_name='managers',
+        verbose_name='Подразделение'
+    )
+
+    class Meta:
+        verbose_name = 'Подразделение пользователя'
+        verbose_name_plural = 'Подразделения пользователей'
+
+    def __str__(self):
+        return f"{self.user.username} — {self.division.name}"

@@ -17,6 +17,10 @@ from openpyxl.utils import get_column_letter
 
 from .filters import EmployeeFilter, StimulusRequestFilter
 from .forms import EmployeeForm, InternalAssignmentFormSet, StimulusRequestForm, StimulusRequestStatusForm, EmployeeExcelUploadForm
+from .permissions import (
+    is_department_manager, is_employee, get_user_division, 
+    can_view_all_requests, can_edit_request, can_delete_request, get_accessible_employees
+)
 from one_time_payments.models import RequestCampaign
 from staffing.models import Division, Position
 from .models import Employee, StimulusRequest
@@ -194,54 +198,69 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         qs = StimulusRequest.objects.select_related('employee', 'requested_by', 'campaign')
-        if self.request.user.has_perm('stimuli.view_all_requests'):
+        user = self.request.user
+        
+        # Определяем базовый queryset в зависимости от прав пользователя
+        if can_view_all_requests(user):
             base_qs = qs
+        elif is_department_manager(user):
+            user_division = get_user_division(user)
+            if user_division:
+                base_qs = qs.filter(employee__division=user_division)
+            else:
+                base_qs = qs.none()
+        elif is_employee(user):
+            base_qs = qs.filter(requested_by=user)
         else:
-            base_qs = qs.filter(requested_by=self.request.user)
+            base_qs = qs.none()
+        
         self.filterset = StimulusRequestFilter(self.request.GET or None, queryset=base_qs)
         filtered_qs = self.filterset.qs
-        user = self.request.user
-        if user.has_perm('stimuli.view_all_requests') or user.has_perm('stimuli.change_stimulusrequest'):
+        
+        # Добавляем аннотации для определения прав редактирования и удаления
+        if can_view_all_requests(user):
             return filtered_qs.annotate(
                 can_edit=Value(True, output_field=BooleanField()),
                 can_delete=Value(True, output_field=BooleanField()),
             )
 
-        if not user.has_perm('stimuli.edit_pending_requests'):
-            return filtered_qs.annotate(
-                can_edit=Value(False, output_field=BooleanField()),
-                can_delete=Value(False, output_field=BooleanField()),
-            )
-
-        return filtered_qs.annotate(
-            can_edit=Case(
-                When(
-                    status=StimulusRequest.Status.PENDING,
-                    requested_by=user,
-                    then=Value(True),
-                ),
-                default=Value(False),
-                output_field=BooleanField(),
-            ),
-            can_delete=Case(
-                When(
-                    status=StimulusRequest.Status.PENDING,
-                    requested_by=user,
-                    then=Value(True),
-                ),
-                default=Value(False),
-                output_field=BooleanField(),
-            ),
+        # Для остальных пользователей проверяем права для каждой заявки
+        annotated_qs = filtered_qs.annotate(
+            can_edit=Value(False, output_field=BooleanField()),
+            can_delete=Value(False, output_field=BooleanField()),
         )
+        
+        # Обновляем аннотации для каждой заявки
+        for request_obj in annotated_qs:
+            request_obj.can_edit = can_edit_request(user, request_obj)
+            request_obj.can_delete = can_delete_request(user, request_obj)
+        
+        return annotated_qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['filter'] = self.filterset
         user = self.request.user
-        can_bulk_delete = user.has_perm('stimuli.delete_stimulusrequest') or user.has_perm('stimuli.edit_pending_requests')
-        show_manage = user.has_perm('stimuli.change_stimulusrequest') or user.has_perm('stimuli.edit_pending_requests')
+        
+        # Определяем права на основе роли пользователя
+        can_bulk_delete = (
+            can_view_all_requests(user) or 
+            (is_department_manager(user) and get_user_division(user)) or
+            (is_employee(user) and user.has_perm('stimuli.edit_pending_requests'))
+        )
+        
+        show_manage = (
+            can_view_all_requests(user) or 
+            (is_department_manager(user) and get_user_division(user)) or
+            (is_employee(user) and user.has_perm('stimuli.edit_pending_requests'))
+        )
+        
         context['can_bulk_delete'] = can_bulk_delete
         context['show_manage_column'] = show_manage
+        context['is_department_manager'] = is_department_manager(user)
+        context['is_employee'] = is_employee(user)
+        context['user_division'] = get_user_division(user)
+        
         base_columns = 8
         if can_bulk_delete:
             base_columns += 1
@@ -258,6 +277,11 @@ class StimulusRequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, gen
     success_url = reverse_lazy('request-list')
     permission_required = 'stimuli.add_stimulusrequest'
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         form.instance.requested_by = self.request.user
         response = super().form_valid(form)
@@ -272,6 +296,11 @@ class StimulusRequestUpdateView(LoginRequiredMixin, generic.UpdateView):
     template_name = 'stimuli/request_form.html'
     success_url = reverse_lazy('request-list')
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         instance = self.get_object()
         previous_employee_id = instance.employee_id
@@ -285,10 +314,22 @@ class StimulusRequestUpdateView(LoginRequiredMixin, generic.UpdateView):
     def get_queryset(self):
         base_qs = StimulusRequest.objects.select_related('employee', 'requested_by')
         user = self.request.user
-        if user.has_perm('stimuli.view_all_requests') or user.has_perm('stimuli.change_stimulusrequest'):
+        
+        # Администраторы могут редактировать все заявки
+        if can_view_all_requests(user):
             return base_qs
-        if user.has_perm('stimuli.edit_pending_requests'):
+        
+        # Руководители департамента могут редактировать заявки своего подразделения
+        if is_department_manager(user):
+            user_division = get_user_division(user)
+            if user_division:
+                return base_qs.filter(employee__division=user_division)
+            return base_qs.none()
+        
+        # Сотрудники могут редактировать только свои заявки в статусе "На рассмотрении"
+        if is_employee(user):
             return base_qs.filter(requested_by=user, status=StimulusRequest.Status.PENDING)
+        
         return base_qs.none()
 
     def dispatch(self, request, *args, **kwargs):
@@ -392,14 +433,27 @@ class StimulusRequestBulkCreateView(LoginRequiredMixin, PermissionRequiredMixin,
     def post(self, request, *args, **kwargs):
         division_id = request.POST.get('division')
         campaign_id = request.POST.get('campaign')
-        employees_qs = Employee.objects.select_related('division').order_by('full_name')
+        user = request.user
+        
+        # Получаем доступных сотрудников в зависимости от роли пользователя
+        employees_qs = get_accessible_employees(user).select_related('division').order_by('full_name')
+        
         if division_id and division_id != '__all__':
             try:
                 division_pk = int(division_id)
             except (TypeError, ValueError):
                 messages.error(request, 'Некорректное подразделение.')
                 return self.render_to_response(self._build_context(None, campaign_id=campaign_id))
+            
+            # Дополнительная проверка для руководителей департамента
+            if is_department_manager(user):
+                user_division = get_user_division(user)
+                if user_division and division_pk != user_division.id:
+                    messages.error(request, 'У вас нет прав для работы с этим подразделением.')
+                    return self.render_to_response(self._build_context(None, campaign_id=campaign_id))
+            
             employees_qs = employees_qs.filter(division_id=division_pk)
+        
         employees = list(employees_qs)
         if not employees:
             messages.warning(request, 'В выбранном подразделении нет сотрудников.')
@@ -484,13 +538,23 @@ class StimulusRequestBulkCreateView(LoginRequiredMixin, PermissionRequiredMixin,
         }
 
     def _get_employees_for_division(self, division_id):
-        qs = Employee.objects.select_related('division').order_by('full_name')
+        user = self.request.user
+        qs = get_accessible_employees(user).select_related('division').order_by('full_name')
+        
         if division_id and division_id != '__all__':
             try:
                 division_pk = int(division_id)
             except (TypeError, ValueError):
                 return []
+            
+            # Дополнительная проверка для руководителей департамента
+            if is_department_manager(user):
+                user_division = get_user_division(user)
+                if user_division and division_pk != user_division.id:
+                    return []
+            
             qs = qs.filter(division_id=division_pk)
+        
         return list(qs)
 
     def render_to_response(self, context):
@@ -501,10 +565,22 @@ class StimulusRequestBulkCreateView(LoginRequiredMixin, PermissionRequiredMixin,
 
 def deletable_requests_queryset(user):
     base_qs = StimulusRequest.objects.select_related('employee', 'requested_by')
-    if user.has_perm('stimuli.delete_stimulusrequest') or user.has_perm('stimuli.view_all_requests'):
+    
+    # Администраторы могут удалять все заявки
+    if can_view_all_requests(user):
         return base_qs
-    if user.has_perm('stimuli.edit_pending_requests'):
+    
+    # Руководители департамента могут удалять заявки своего подразделения
+    if is_department_manager(user):
+        user_division = get_user_division(user)
+        if user_division:
+            return base_qs.filter(employee__division=user_division)
+        return base_qs.none()
+    
+    # Сотрудники могут удалять только свои заявки в статусе "На рассмотрении"
+    if is_employee(user):
         return base_qs.filter(requested_by=user, status=StimulusRequest.Status.PENDING)
+    
     return base_qs.none()
 
 

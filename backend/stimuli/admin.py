@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Employee, InternalAssignment, StimulusRequest
+from .models import Employee, InternalAssignment, StimulusRequest, UserDivision
 
 
 class InternalAssignmentInline(admin.TabularInline):
@@ -58,3 +58,10 @@ class StimulusRequestAdmin(admin.ModelAdmin):
     search_fields = ('employee__full_name', 'requested_by__username', 'campaign__name')
     autocomplete_fields = ('employee', 'requested_by', 'campaign')
     readonly_fields = ('created_at', 'updated_at', 'archived_at')
+
+
+@admin.register(UserDivision)
+class UserDivisionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'division')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'division__name')
+    autocomplete_fields = ('user', 'division')

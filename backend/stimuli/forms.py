@@ -72,8 +72,7 @@ class EmployeeForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        Division = Employee._meta.get_field('division').remote_field.model
-        Position = Employee._meta.get_field('position').remote_field.model
+        from staffing.models import Division, Position
         self.fields['division'].queryset = Division.objects.order_by('name')
         self.fields['position'].queryset = Position.objects.order_by('name')
 
@@ -113,9 +112,15 @@ class StimulusRequestForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.fields['campaign'].queryset = RequestCampaign.objects.order_by('-opens_at', 'name')
         self.fields['campaign'].required = False
+        
+        # Ограничиваем выбор сотрудников в зависимости от роли пользователя
+        if user:
+            from .permissions import get_accessible_employees
+            self.fields['employee'].queryset = get_accessible_employees(user).order_by('full_name')
 
     def clean_amount(self):
         amount = self.cleaned_data['amount']
