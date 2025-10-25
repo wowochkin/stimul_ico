@@ -979,4 +979,17 @@ class EmployeeExcelUploadView(LoginRequiredMixin, PermissionRequiredMixin, View)
 class HealthCheckView(View):
     """Простой healthcheck endpoint для Railway"""
     def get(self, request, *args, **kwargs):
-        return HttpResponse("OK", status=200)
+        try:
+            # Простая проверка, что Django работает
+            from django.conf import settings
+            import os
+            
+            # Проверяем основные настройки
+            debug_mode = settings.DEBUG
+            db_engine = settings.DATABASES['default']['ENGINE']
+            database_url = os.environ.get('DATABASE_URL', 'Not set')
+            
+            response_text = f"OK - Debug: {debug_mode}, DB: {db_engine}, DATABASE_URL: {'Set' if database_url != 'Not set' else 'Not set'}"
+            return HttpResponse(response_text, status=200)
+        except Exception as e:
+            return HttpResponse(f"ERROR: {str(e)}", status=500)
