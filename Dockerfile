@@ -15,12 +15,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend /app/backend
 COPY frontend /app/frontend
 COPY README.md requirements.txt /app/
+COPY gunicorn.conf.py /app/gunicorn.conf.py
 COPY setup.sh /app/setup.sh
 RUN chmod +x /app/setup.sh
 
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-EXPOSE 8000
+COPY test_app.py /app/test_app.py
+
+EXPOSE 8080
 
 CMD ["/app/entrypoint.sh"]

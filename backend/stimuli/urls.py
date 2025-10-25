@@ -1,9 +1,16 @@
 from django.urls import path
+from django.http import HttpResponse
 
 from . import views
 
+# Супер-простой view для тестирования
+def simple_test(request):
+    return HttpResponse("OK - Simple test works!", content_type='text/plain')
+
 urlpatterns = [
     path('', views.HomeRedirectView.as_view(), name='home'),
+    path('simple/', simple_test, name='simple'),
+    path('test/', views.TestView.as_view(), name='test'),
     path('employees/', views.EmployeeListView.as_view(), name='employee-list'),
     path('employees/add/', views.EmployeeCreateView.as_view(), name='employee-add'),
     path('employees/<int:pk>/edit/', views.EmployeeUpdateView.as_view(), name='employee-edit'),
@@ -17,4 +24,5 @@ urlpatterns = [
     path('requests/<int:pk>/update-status/', views.StimulusRequestStatusUpdateView.as_view(), name='request-status-update'),
     path('requests/<int:pk>/delete/', views.StimulusRequestDeleteView.as_view(), name='request-delete'),
     path('requests/bulk-delete/', views.StimulusRequestBulkDeleteView.as_view(), name='request-bulk-delete'),
+    path('health/', views.HealthCheckView.as_view(), name='health'),
 ]

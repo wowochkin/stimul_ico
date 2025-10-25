@@ -398,9 +398,50 @@ class StimulusRequestDeleteView(LoginRequiredMixin, generic.DeleteView):
         return response
 
 
-class HomeRedirectView(LoginRequiredMixin, View):
-
+class TestView(View):
+    """Простая тестовая страница"""
+    
     def get(self, request, *args, **kwargs):
+        import os
+        return HttpResponse("""
+        <html>
+        <head><title>Test Page</title></head>
+        <body>
+            <h1>✅ Django работает!</h1>
+            <p>Время: """ + str(datetime.now()) + """</p>
+            <p>Пользователь: """ + str(request.user) + """</p>
+            <p>Авторизован: """ + str(request.user.is_authenticated) + """</p>
+            <p>IP: """ + str(request.META.get('REMOTE_ADDR', 'Unknown')) + """</p>
+            <p>Host: """ + str(request.META.get('HTTP_HOST', 'Unknown')) + """</p>
+            <p>PORT env: """ + str(os.environ.get('PORT', 'Not set')) + """</p>
+            <p>DEBUG: """ + str(os.environ.get('DJANGO_DEBUG', 'Not set')) + """</p>
+            <p><a href="/">Главная</a> | <a href="/admin/">Админ</a> | <a href="/health/">Health</a></p>
+        </body>
+        </html>
+        """, content_type='text/html')
+
+
+class HomeRedirectView(View):
+    """Главная страница с проверкой аутентификации"""
+    
+    def get(self, request, *args, **kwargs):
+        # Если пользователь не авторизован, показываем простую страницу
+        if not request.user.is_authenticated:
+            return HttpResponse("""
+            <html>
+            <head><title>Stimul ICO</title></head>
+            <body>
+                <h1>Добро пожаловать в Stimul ICO!</h1>
+                <p>Приложение успешно запущено на Railway.</p>
+                <p><a href="/admin/">Админ панель</a></p>
+                <p><a href="/accounts/login/">Войти в систему</a></p>
+                <p><a href="/health/">Health Check</a></p>
+                <p><a href="/test/">Тестовая страница</a></p>
+            </body>
+            </html>
+            """, content_type='text/html')
+        
+        # Если авторизован, перенаправляем как раньше
         if request.user.has_perm('stimuli.view_employee'):
             return redirect('employee-list')
         return redirect('request-list')
@@ -974,3 +1015,31 @@ class EmployeeExcelUploadView(LoginRequiredMixin, PermissionRequiredMixin, View)
     def render_to_response(self, context):
         from django.shortcuts import render
         return render(self.request, self.template_name, context)
+
+
+class HealthCheckView(View):
+    """Надежный healthcheck endpoint для Railway"""
+    def get(self, request, *args, **kwargs):
+        try:
+            from django.conf import settings
+            from django.db import connection
+            import os
+            
+            # Проверяем основные настройки
+            debug_mode = settings.DEBUG
+            db_engine = settings.DATABASES['default']['ENGINE']
+            database_url = os.environ.get('DATABASE_URL', 'Not set')
+            
+            # Проверяем подключение к базе данных
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                db_status = "Connected"
+            
+            # Проверяем Railway переменные
+            railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'Not set')
+            port = os.environ.get('PORT', 'Not set')
+            
+            response_text = f"OK - Debug: {debug_mode}, DB: {db_status}, PORT: {port}, Railway: {railway_domain}"
+            return HttpResponse(response_text, status=200)
+        except Exception as e:
+            return HttpResponse(f"ERROR: {str(e)}", status=500)
