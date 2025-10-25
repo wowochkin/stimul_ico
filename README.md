@@ -16,6 +16,9 @@
 - Полный список сотрудников ИЦО с полями из Excel-таблицы
 - Фильтрация по ФИО, подразделению и категории (АУП/ППС)
 - Создание, редактирование и удаление карточек сотрудников (для админов)
+- **Система прав доступа:**
+  - **Руководители департамента** - могут создавать заявки для сотрудников своего подразделения
+  - **Сотрудники** - могут создавать заявки только для себя
 - Подача заявок на стимулирование ответственными сотрудниками через статический фронтенд
 - Просмотр заявок, смена статуса и добавление комментариев администраторами через API
 - Встроенная панель администратора Django
@@ -51,14 +54,37 @@
    python manage.py createsuperuser
    ```
 
-5. Настройте роли и права доступа:
+5. Настройте систему прав доступа:
    ```bash
-   python manage.py setup_roles
+   python manage.py init_permissions
    ```
-   - Добавьте суперпользователя в группу «Администраторы» через `python manage.py shell` или через админку.
-   - Ответственных сотрудников добавляйте в группу «Ответственные».
 
-6. Импортируйте сотрудников из Excel (файл лежит в корне репозитория):
+6. Создайте пользователей с ролями:
+   ```bash
+   # Руководитель департамента
+   python manage.py create_production_user \
+     --username "manager.dev" \
+     --password "secure_password" \
+     --first-name "Иван" \
+     --last-name "Петров" \
+     --email "manager@company.com" \
+     --role "manager" \
+     --division "Отдел разработки" \
+     --position "Руководитель отдела"
+   
+   # Сотрудник
+   python manage.py create_production_user \
+     --username "employee.dev" \
+     --password "secure_password" \
+     --first-name "Анна" \
+     --last-name "Сидорова" \
+     --email "employee@company.com" \
+     --role "employee" \
+     --division "Отдел разработки" \
+     --position "Разработчик"
+   ```
+
+7. Импортируйте сотрудников из Excel (файл лежит в корне репозитория):
    ```bash
    python manage.py import_employees "../Таблица по стимулу 2025-2026 (2).xlsx"
    ```
@@ -67,12 +93,12 @@
    python manage.py import_employees "../Таблица по стимулу 2025-2026 (2).xlsx" --truncate
    ```
 
-7. Запустите сервер разработки:
+8. Запустите сервер разработки:
    ```bash
    python manage.py runserver
    ```
 
-8. Для локального тестирования фронтенда создайте `frontend/config.js` на основе `config.template.js` и укажите `http://127.0.0.1:8000`.
+9. Для локального тестирования фронтенда создайте `frontend/config.js` на основе `config.template.js` и укажите `http://127.0.0.1:8000`.
 
 ## GitHub Pages
 
@@ -93,12 +119,26 @@
    - `DJANGO_CSRF_TRUSTED_ORIGINS` — `https://<username>.github.io`
    - `DATABASE_URL` — строка подключения Neon
    - при необходимости `DJANGO_DEBUG=0`
-5. После первого деплоя откройте **Web Console → shell** и создайте суперпользователя:
+5. После первого деплоя откройте **Web Console → shell** и выполните настройку:
    ```bash
+   # Создайте суперпользователя
    python backend/manage.py createsuperuser
-   ```
-6. При необходимости загрузите сотрудников:
-   ```bash
+   
+   # Инициализируйте систему прав доступа
+   python backend/manage.py init_permissions
+   
+   # Создайте пользователей (пример)
+   python backend/manage.py create_production_user \
+     --username "admin" \
+     --password "secure_password" \
+     --first-name "Админ" \
+     --last-name "Админов" \
+     --email "admin@company.com" \
+     --role "manager" \
+     --division "Администрация" \
+     --position "Администратор"
+   
+   # При необходимости загрузите сотрудников
    python backend/manage.py import_employees "Таблица по стимулу 2025-2026 (2).xlsx"
    ```
 

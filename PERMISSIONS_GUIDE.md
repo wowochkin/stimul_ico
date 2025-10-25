@@ -1,5 +1,35 @@
 # Инструкция по использованию системы прав доступа
 
+## Решение проблем
+
+### Если в админке не видно связей между пользователями и сотрудниками
+
+Выполните команды для очистки и правильной настройки:
+
+```bash
+# Очистить и пересоздать все связи
+python3 manage.py reset_user_connections --clean
+
+# Или только очистить дублирующиеся записи сотрудников
+python3 manage.py clean_employees
+```
+
+### Проверка работы системы
+
+```bash
+# Проверить связи пользователей и сотрудников
+python3 manage.py shell -c "
+from django.contrib.auth.models import User
+from stimuli.models import Employee
+for user in User.objects.filter(username__in=['manager_dev', 'employee_dev', 'manager_marketing', 'employee_marketing']):
+    try:
+        emp = user.employee_profile
+        print(f'✓ {user.username} -> {emp.full_name} ({emp.division.name})')
+    except:
+        print(f'✗ {user.username} -> НЕТ СВЯЗИ')
+"
+```
+
 ## Что было реализовано
 
 ✅ **Созданы две группы пользователей:**
