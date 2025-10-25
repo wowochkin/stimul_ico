@@ -405,7 +405,10 @@ class TestView(View):
         import os
         return HttpResponse("""
         <html>
-        <head><title>Test Page</title></head>
+        <head>
+            <meta charset="utf-8">
+            <title>Test Page</title>
+        </head>
         <body>
             <h1>✅ Django работает!</h1>
             <p>Время: """ + str(datetime.now()) + """</p>
@@ -418,28 +421,16 @@ class TestView(View):
             <p><a href="/">Главная</a> | <a href="/admin/">Админ</a> | <a href="/health/">Health</a></p>
         </body>
         </html>
-        """, content_type='text/html')
+        """, content_type='text/html; charset=utf-8')
 
 
 class HomeRedirectView(View):
     """Главная страница с проверкой аутентификации"""
     
     def get(self, request, *args, **kwargs):
-        # Если пользователь не авторизован, показываем простую страницу
+        # Если пользователь не авторизован, перенаправляем на страницу входа
         if not request.user.is_authenticated:
-            return HttpResponse("""
-            <html>
-            <head><title>Stimul ICO</title></head>
-            <body>
-                <h1>Добро пожаловать в Stimul ICO!</h1>
-                <p>Приложение успешно запущено на Railway.</p>
-                <p><a href="/admin/">Админ панель</a></p>
-                <p><a href="/accounts/login/">Войти в систему</a></p>
-                <p><a href="/health/">Health Check</a></p>
-                <p><a href="/test/">Тестовая страница</a></p>
-            </body>
-            </html>
-            """, content_type='text/html')
+            return redirect('login')
         
         # Если авторизован, перенаправляем как раньше
         if request.user.has_perm('stimuli.view_employee'):
