@@ -17,10 +17,10 @@ worker_class = 'sync'
 worker_connections = 1000
 
 # Таймаут для worker'ов (в секундах)
-timeout = 120
+timeout = 30  # Уменьшаем для быстрой диагностики
 
 # Graceful timeout
-graceful_timeout = 30
+graceful_timeout = 10
 
 # Keep-alive соединения
 keepalive = 2
@@ -35,7 +35,7 @@ chdir = '/app/backend'
 # Логирование
 accesslog = '-'  # stdout
 errorlog = '-'   # stderr
-loglevel = 'info'  # изменено с debug на info для production
+loglevel = 'debug'  # временно включаем debug для диагностики
 
 # Access log format
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
