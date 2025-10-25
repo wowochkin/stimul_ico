@@ -21,6 +21,8 @@ RUN chmod +x /app/setup.sh
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
+COPY test_app.py /app/test_app.py
+
 EXPOSE 8080
 
 CMD ["/app/entrypoint.sh"]
