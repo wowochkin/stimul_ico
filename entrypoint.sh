@@ -30,6 +30,7 @@ echo "  - GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}"
 echo "  - DATABASE_URL: ${DATABASE_URL:+Set}"
 echo "  - DJANGO_DEBUG: ${DJANGO_DEBUG:-Not set}"
 echo "  - RAILWAY_PUBLIC_DOMAIN: ${RAILWAY_PUBLIC_DOMAIN:-Not set}"
+echo "  - RAILWAY_HEALTHCHECK_TIMEOUT_SEC: ${RAILWAY_HEALTHCHECK_TIMEOUT_SEC:-300}"
 
 # Ensure correct import path for the Django project package under backend/
 echo "🚀 Запуск сервера на порту ${PORT:-8000}..."

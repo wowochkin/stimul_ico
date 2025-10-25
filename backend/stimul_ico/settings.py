@@ -16,7 +16,13 @@ DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
 # Railway automatically sets RAILWAY_PUBLIC_DOMAIN
 RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
 if RAILWAY_PUBLIC_DOMAIN:
-    ALLOWED_HOSTS = [RAILWAY_PUBLIC_DOMAIN, 'localhost', '127.0.0.1', '0.0.0.0']
+    ALLOWED_HOSTS = [
+        RAILWAY_PUBLIC_DOMAIN, 
+        'localhost', 
+        '127.0.0.1', 
+        '0.0.0.0',
+        'healthcheck.railway.app'  # Railway healthcheck hostname
+    ]
 else:
     ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split() or ['*']
 

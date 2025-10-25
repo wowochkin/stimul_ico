@@ -977,11 +977,11 @@ class EmployeeExcelUploadView(LoginRequiredMixin, PermissionRequiredMixin, View)
 
 
 class HealthCheckView(View):
-    """Простой healthcheck endpoint для Railway"""
+    """Надежный healthcheck endpoint для Railway"""
     def get(self, request, *args, **kwargs):
         try:
-            # Простая проверка, что Django работает
             from django.conf import settings
+            from django.db import connection
             import os
             
             # Проверяем основные настройки
@@ -989,7 +989,16 @@ class HealthCheckView(View):
             db_engine = settings.DATABASES['default']['ENGINE']
             database_url = os.environ.get('DATABASE_URL', 'Not set')
             
-            response_text = f"OK - Debug: {debug_mode}, DB: {db_engine}, DATABASE_URL: {'Set' if database_url != 'Not set' else 'Not set'}"
+            # Проверяем подключение к базе данных
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                db_status = "Connected"
+            
+            # Проверяем Railway переменные
+            railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'Not set')
+            port = os.environ.get('PORT', 'Not set')
+            
+            response_text = f"OK - Debug: {debug_mode}, DB: {db_status}, PORT: {port}, Railway: {railway_domain}"
             return HttpResponse(response_text, status=200)
         except Exception as e:
             return HttpResponse(f"ERROR: {str(e)}", status=500)
