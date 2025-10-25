@@ -25,6 +25,22 @@ def can_view_all_requests(user):
     return user.has_perm('stimuli.view_all_requests') or user.is_staff
 
 
+def can_change_request_status(user, request):
+    """Проверяет, может ли пользователь изменять статус конкретной заявки"""
+    # Администраторы могут изменять статус всех заявок
+    if user.is_staff:
+        return True
+    
+    # Руководители департамента могут изменять статус заявок своего подразделения
+    if is_department_manager(user):
+        user_division = get_user_division(user)
+        if user_division and request.employee.division == user_division:
+            return True
+    
+    # Сотрудники НЕ могут изменять статус заявок (даже своих)
+    return False
+
+
 def can_edit_request(user, request):
     """Проверяет, может ли пользователь редактировать конкретную заявку"""
     # Администраторы могут редактировать все

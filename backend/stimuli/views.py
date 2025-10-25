@@ -18,8 +18,8 @@ from openpyxl.utils import get_column_letter
 from .filters import EmployeeFilter, StimulusRequestFilter
 from .forms import EmployeeForm, InternalAssignmentFormSet, StimulusRequestForm, StimulusRequestStatusForm, EmployeeExcelUploadForm
 from .permissions import (
-    is_department_manager, is_employee, get_user_division, 
-    can_view_all_requests, can_edit_request, can_delete_request, get_accessible_employees
+    is_department_manager, is_employee, get_user_division,
+    can_view_all_requests, can_edit_request, can_delete_request, can_change_request_status, get_accessible_employees
 )
 from one_time_payments.models import RequestCampaign
 from staffing.models import Division, Position
@@ -222,18 +222,21 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
             return filtered_qs.annotate(
                 can_edit=Value(True, output_field=BooleanField()),
                 can_delete=Value(True, output_field=BooleanField()),
+                can_change_status=Value(True, output_field=BooleanField()),
             )
 
         # Для остальных пользователей проверяем права для каждой заявки
         annotated_qs = filtered_qs.annotate(
             can_edit=Value(False, output_field=BooleanField()),
             can_delete=Value(False, output_field=BooleanField()),
+            can_change_status=Value(False, output_field=BooleanField()),
         )
         
         # Обновляем аннотации для каждой заявки
         for request_obj in annotated_qs:
             request_obj.can_edit = can_edit_request(user, request_obj)
             request_obj.can_delete = can_delete_request(user, request_obj)
+            request_obj.can_change_status = can_change_request_status(user, request_obj)
         
         return annotated_qs
 
@@ -345,6 +348,12 @@ class StimulusRequestStatusUpdateView(LoginRequiredMixin, PermissionRequiredMixi
 
     def post(self, request, *args, **kwargs):
         instance = get_object_or_404(StimulusRequest, pk=kwargs['pk'])
+        
+        # Проверяем, может ли пользователь изменять статус этой заявки
+        if not can_change_request_status(request.user, instance):
+            messages.error(request, 'У вас нет прав на изменение статуса этой заявки.')
+            return redirect('request-list')
+        
         form = StimulusRequestStatusForm(request.POST, instance=instance)
         if form.is_valid():
             with transaction.atomic():

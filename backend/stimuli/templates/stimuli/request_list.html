@@ -78,7 +78,7 @@
                         <td>{{ request.requested_by.get_full_name|default:request.requested_by.username }}</td>
                         <td>{{ request.justification|linebreaksbr }}</td>
                         <td>{{ request.admin_comment|linebreaksbr }}</td>
-                        {% if perms.stimuli.change_stimulusrequest %}
+                        {% if request.can_change_status %}
                             <td>
                                 <form method="post" action="{% url 'request-status-update' request.pk %}" data-autosubmit="true" data-autosubmit-delay="200">
                                     {% csrf_token %}
