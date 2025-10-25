@@ -39,4 +39,22 @@ class StimulusRequestFilter(django_filters.FilterSet):
     def __init__(self, data=None, queryset=None, *, request=None, prefix=None):
         super().__init__(data, queryset, request=request, prefix=prefix)
         self.filters['campaign'].field.empty_label = 'Все кампании'
-        self.filters['campaign'].field.queryset = RequestCampaign.objects.order_by('-opens_at', 'name')
+        
+        # Ограничиваем выбор кампаний в зависимости от роли пользователя
+        if request and request.user.is_authenticated:
+            from stimuli.permissions import is_employee, is_department_manager
+            if is_employee(request.user) or is_department_manager(request.user):
+                # Сотрудники и руководители департамента видят только открытые кампании
+                self.filters['campaign'].field.queryset = RequestCampaign.objects.filter(
+                    status=RequestCampaign.Status.OPEN
+                ).order_by('-opens_at', 'name')
+            else:
+                # Администраторы видят все кампании кроме черновиков
+                self.filters['campaign'].field.queryset = RequestCampaign.objects.exclude(
+                    status=RequestCampaign.Status.DRAFT
+                ).order_by('-opens_at', 'name')
+        else:
+            # По умолчанию показываем все кампании кроме черновиков
+            self.filters['campaign'].field.queryset = RequestCampaign.objects.exclude(
+                status=RequestCampaign.Status.DRAFT
+            ).order_by('-opens_at', 'name')

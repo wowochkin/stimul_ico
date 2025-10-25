@@ -117,14 +117,14 @@ class StimulusRequestForm(forms.ModelForm):
         
         # Ограничиваем выбор кампаний в зависимости от роли пользователя
         if user:
-            from .permissions import is_employee
-            if is_employee(user):
-                # Сотрудники видят только открытые кампании
+            from .permissions import is_employee, is_department_manager
+            if is_employee(user) or is_department_manager(user):
+                # Сотрудники и руководители департамента видят только открытые кампании
                 self.fields['campaign'].queryset = RequestCampaign.objects.filter(
                     status=RequestCampaign.Status.OPEN
                 ).order_by('-opens_at', 'name')
             else:
-                # Руководители и администраторы видят все кампании кроме черновиков
+                # Администраторы видят все кампании кроме черновиков
                 self.fields['campaign'].queryset = RequestCampaign.objects.exclude(
                     status=RequestCampaign.Status.DRAFT
                 ).order_by('-opens_at', 'name')

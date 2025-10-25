@@ -600,12 +600,9 @@ def deletable_requests_queryset(user):
     if can_view_all_requests(user):
         return base_qs
     
-    # Руководители департамента могут удалять заявки своего подразделения
+    # Руководители департамента могут удалять только свои заявки в статусе "На рассмотрении"
     if is_department_manager(user):
-        user_division = get_user_division(user)
-        if user_division:
-            return base_qs.filter(employee__division=user_division)
-        return base_qs.none()
+        return base_qs.filter(requested_by=user, status=StimulusRequest.Status.PENDING)
     
     # Сотрудники могут удалять только свои заявки в статусе "На рассмотрении"
     if is_employee(user):

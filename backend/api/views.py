@@ -64,7 +64,7 @@ class StimulusRequestViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def statuses(self, request):
+    def statuses(self, request_obj):
         statuses = [{'value': value, 'label': label} for value, label in StimulusRequest.Status.choices]
         return Response(statuses)
 
@@ -76,8 +76,21 @@ class RequestCampaignViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = RequestCampaign.objects.all()
         status_filter = self.request.query_params.get('status')
+        
         if status_filter == 'active':
             return RequestCampaign.objects.active()
+        
+        # Ограничиваем выбор кампаний в зависимости от роли пользователя
+        user = self.request.user
+        if user.is_authenticated:
+            from stimuli.permissions import is_employee, is_department_manager
+            if is_employee(user) or is_department_manager(user):
+                # Сотрудники и руководители департамента видят только открытые кампании
+                queryset = queryset.filter(status='open')
+            else:
+                # Администраторы видят все кампании кроме черновиков
+                queryset = queryset.exclude(status='draft')
+        
         if status_filter:
             return queryset.filter(status=status_filter)
         return queryset
