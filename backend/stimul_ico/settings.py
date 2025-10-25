@@ -21,12 +21,22 @@ if RAILWAY_PUBLIC_DOMAIN:
         'localhost', 
         '127.0.0.1', 
         '0.0.0.0',
-        'healthcheck.railway.app'  # Railway healthcheck hostname
+        'healthcheck.railway.app',  # Railway healthcheck hostname
+        '.railway.app',  # Все поддомены Railway
+        '.up.railway.app',  # Новые домены Railway
     ]
 else:
     ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split() or ['*']
 
-CSRF_TRUSTED_ORIGINS = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split()
+# CSRF trusted origins для Railway
+if RAILWAY_PUBLIC_DOMAIN:
+    CSRF_TRUSTED_ORIGINS = [
+        f'https://{RAILWAY_PUBLIC_DOMAIN}',
+        'https://*.railway.app',
+        'https://*.up.railway.app',
+    ]
+else:
+    CSRF_TRUSTED_ORIGINS = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split()
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -105,9 +115,14 @@ REST_FRAMEWORK = {
     ],
 }
 
+# CORS настройки - разрешаем Railway домены
 CORS_ALLOWED_ORIGINS = [origin for origin in os.environ.get('DJANGO_CORS_ALLOWED_ORIGINS', '').split() if origin]
-if not CORS_ALLOWED_ORIGINS and DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
+if not CORS_ALLOWED_ORIGINS:
+    if RAILWAY_PUBLIC_DOMAIN:
+        # Для Railway разрешаем все
+        CORS_ALLOW_ALL_ORIGINS = True
+    elif DEBUG:
+        CORS_ALLOW_ALL_ORIGINS = True
 
 LANGUAGE_CODE = 'ru-ru'
 

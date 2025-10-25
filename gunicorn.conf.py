@@ -7,8 +7,9 @@ import multiprocessing
 # Привязка к адресу и порту
 bind = f"0.0.0.0:{os.environ.get('PORT', '8000')}"
 
-# Количество worker процессов
-workers = int(os.environ.get('GUNICORN_WORKERS', '3'))
+# Количество worker процессов  
+# Временно используем 1 для диагностики
+workers = int(os.environ.get('GUNICORN_WORKERS', '1'))
 
 # Тип worker'ов
 worker_class = 'sync'
@@ -41,12 +42,19 @@ loglevel = 'debug'  # временно включаем debug для диагн�
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
 
 # Preload app for better memory usage
+# ВАЖНО: False чтобы каждый worker загружал Django независимо
 preload_app = False
 
-# Proxy headers
+# Proxy headers - разрешаем все для Railway
 forwarded_allow_ips = '*'
 proxy_protocol = False
 proxy_allow_ips = '*'
+
+# Отключаем daemon mode явно
+daemon = False
+
+# Bind к интерфейсу
+raw_env = []
 
 # Security headers для работы за Railway proxy
 secure_scheme_headers = {
@@ -73,13 +81,31 @@ def on_exit(server):
 
 def post_worker_init(worker):
     """Вызывается после инициализации каждого worker'а"""
-    print(f"✅ Worker {worker.pid} инициализирован")
+    import sys
+    print(f"✅ Worker {worker.pid} инициализирован", file=sys.stderr, flush=True)
+    try:
+        # Пробуем импортировать Django, чтобы проверить что всё ОК
+        import django
+        from django.conf import settings
+        print(f"✅ Worker {worker.pid}: Django {django.get_version()} загружен", file=sys.stderr, flush=True)
+        print(f"✅ Worker {worker.pid}: DEBUG={settings.DEBUG}", file=sys.stderr, flush=True)
+    except Exception as e:
+        print(f"❌ Worker {worker.pid}: Ошибка загрузки Django: {e}", file=sys.stderr, flush=True)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
 
 def worker_int(worker):
     """Вызывается когда worker получает SIGINT или SIGQUIT"""
-    print(f"⚠️  Worker {worker.pid} получил сигнал прерывания")
+    import sys
+    print(f"⚠️  Worker {worker.pid} получил сигнал прерывания", file=sys.stderr, flush=True)
 
 def worker_abort(worker):
     """Вызывается когда worker получает SIGABRT"""
-    print(f"❌ Worker {worker.pid} аварийно завершен")
+    import sys
+    print(f"❌ Worker {worker.pid} аварийно завершен", file=sys.stderr, flush=True)
+    
+def worker_exit(server, worker):
+    """Вызывается когда worker выходит"""
+    import sys
+    print(f"👋 Worker {worker.pid} завершил работу", file=sys.stderr, flush=True)
 

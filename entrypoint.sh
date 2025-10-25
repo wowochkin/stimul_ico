@@ -95,5 +95,10 @@ echo "✅ App test прошел успешно!"
 
 # Запускаем Gunicorn с конфигом
 echo "🚀 Запускаем Gunicorn на порту ${PORT:-8000}..."
+echo "📡 Gunicorn будет слушать: 0.0.0.0:${PORT:-8000}"
+echo "🔧 Используем конфиг: /app/gunicorn.conf.py"
+
 cd /app
+
+# Запускаем Gunicorn
 exec gunicorn --config gunicorn.conf.py stimul_ico.wsgi:application
