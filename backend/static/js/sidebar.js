@@ -15,37 +15,36 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!header || !headerLeft) return;
         
-        // Сначала скрываем навигацию и смотрим размер header без неё
+        // Выполняем измерение в два шага через requestAnimationFrame для корректности
+        // Шаг 1: скрываем навигацию и измеряем высоту без неё
         headerNav.style.display = 'none';
-        const headerHeightWithoutNav = header.getBoundingClientRect().height;
         
-        // Получаем размеры элементов header-left
-        const headerLeftRect = headerLeft.getBoundingClientRect();
-        
-        // Теперь показываем навигацию
-        headerNav.style.display = 'flex';
-        
-        // Небольшая задержка для корректного измерения после показа
-        setTimeout(() => {
-            const headerRect = header.getBoundingClientRect();
-            const navRect = headerNav.getBoundingClientRect();
+        requestAnimationFrame(() => {
+            // Сразу в следующем кадре измеряем высоту без навигации
+            const headerHeightWithoutNav = header.getBoundingClientRect().height;
             
-            // Проверяем, увеличилась ли высота header (перенос на новую строку)
-            const isHeaderMultiLine = headerRect.height > headerHeightWithoutNav + 15;
+            // Показываем навигацию
+            headerNav.style.display = 'flex';
             
-            const isOverflowing = isHeaderMultiLine;
-            
-            // Если не умещается - скрываем навигацию и показываем кнопку
-            if (isOverflowing) {
-                headerNav.style.display = 'none';
-                menuToggle.style.display = 'flex';
-                header.classList.add('nav-collapsed');
-            } else {
-                headerNav.style.display = 'flex';
-                menuToggle.style.display = 'none';
-                header.classList.remove('nav-collapsed');
-            }
-        }, 50);
+            // Еще один кадр для корректного измерения с навигацией
+            requestAnimationFrame(() => {
+                const headerRect = header.getBoundingClientRect();
+                
+                // Проверяем, увеличилась ли высота header (перенос на новую строку)
+                const isHeaderMultiLine = headerRect.height > headerHeightWithoutNav + 15;
+                
+                // Если не умещается - скрываем навигацию и показываем кнопку
+                if (isHeaderMultiLine) {
+                    headerNav.style.display = 'none';
+                    menuToggle.style.display = 'flex';
+                    header.classList.add('nav-collapsed');
+                } else {
+                    headerNav.style.display = 'flex';
+                    menuToggle.style.display = 'none';
+                    header.classList.remove('nav-collapsed');
+                }
+            });
+        });
     }
 
     // При загрузке скрываем всё для предотвращения мигания
