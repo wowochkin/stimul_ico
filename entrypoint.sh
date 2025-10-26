@@ -100,5 +100,29 @@ fi
 
 echo "✅ wsgi.py найден, запускаем Gunicorn..."
 
-# Запускаем Gunicorn с конфигом
-exec gunicorn --config /app/gunicorn.conf.py stimul_ico.wsgi:application
+# Проверяем переменные окружения
+echo "🔍 Переменные окружения:"
+echo "  - PORT: ${PORT:-8000}"
+echo "  - PYTHONPATH: ${PYTHONPATH:-Not set}"
+echo "  - DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-Not set}"
+
+# Проверяем, что можем импортировать Django
+echo "🧪 Тестируем импорт Django..."
+python -c "import django; print(f'Django version: {django.get_version()}')"
+
+# Проверяем, что можем импортировать WSGI приложение
+echo "🧪 Тестируем импорт WSGI..."
+python -c "from stimul_ico.wsgi import application; print('WSGI application imported successfully')"
+
+echo "🚀 Запускаем Gunicorn..."
+
+# Запускаем Gunicorn с параметрами командной строки
+exec gunicorn \
+    --bind 0.0.0.0:${PORT:-8000} \
+    --workers 1 \
+    --worker-class sync \
+    --timeout 120 \
+    --log-level info \
+    --access-logfile - \
+    --error-logfile - \
+    stimul_ico.wsgi:application
