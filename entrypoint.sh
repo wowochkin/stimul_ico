@@ -80,12 +80,25 @@ fi
 
 echo "✅ Django готов к запуску!"
 
-# Запускаем Django development server для Railway
-echo "🚀 Запускаем Django development server на порту ${PORT:-8000}..."
+# Запускаем Gunicorn для Railway
+echo "🚀 Запускаем Gunicorn на порту ${PORT:-8000}..."
 echo "📡 Сервер будет слушать: 0.0.0.0:${PORT:-8000}"
 
 # Переходим в backend директорию для правильного импорта
 cd /app/backend
 
-# Запускаем Django development server
-exec python manage.py runserver 0.0.0.0:${PORT:-8000}
+# Проверяем, что мы в правильной директории
+echo "📁 Текущая директория: $(pwd)"
+echo "📁 Содержимое директории:"
+ls -la
+
+# Проверяем, что wsgi.py существует
+if [ ! -f "stimul_ico/wsgi.py" ]; then
+    echo "❌ ОШИБКА: wsgi.py не найден в $(pwd)!"
+    exit 1
+fi
+
+echo "✅ wsgi.py найден, запускаем Gunicorn..."
+
+# Запускаем Gunicorn с конфигом
+exec gunicorn --config /app/gunicorn.conf.py stimul_ico.wsgi:application
