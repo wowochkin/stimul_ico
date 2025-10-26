@@ -1,62 +1,45 @@
 // Управление сайдбаром
 document.addEventListener('DOMContentLoaded', function() {
+    const header = document.querySelector('.header');
+    const headerLeft = document.querySelector('.header-left');
+    const headerContent = document.querySelector('.header-content');
+    const headerNav = document.querySelector('.header-nav');
+    const logoutForm = document.querySelector('.header-content .logout-form');
+
     const menuToggle = document.getElementById('menu-toggle');
     const menuClose = document.getElementById('menu-close');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
-    const headerNav = document.querySelector('.header-nav');
 
-    let isCollapsed = false;
     let pendingRaf = null;
 
     function measureNavFit() {
-        if (!headerNav || !menuToggle) {
+        if (!header || !headerLeft || !headerContent || !headerNav || !menuToggle) {
             return;
         }
 
-        const header = document.querySelector('.header');
-        const headerLeft = document.querySelector('.header-left');
-
-        if (!header || !headerLeft) {
-            return;
-        }
-
-        // Подготавливаем навигацию к измерению, делаем её невидимой, но сохраняем размеры
+        header.classList.remove('nav-collapsed');
         headerNav.style.display = 'flex';
-        headerNav.style.visibility = 'hidden';
-        headerNav.style.position = 'absolute';
-        headerNav.style.pointerEvents = 'none';
+        if (logoutForm) {
+            logoutForm.style.display = 'inline';
+        }
+        menuToggle.style.display = 'none';
 
-        const headerWidth = header.clientWidth;
-        const headerLeftWidth = headerLeft.offsetWidth;
-        const navWidth = headerNav.scrollWidth;
-        const navRect = headerNav.getBoundingClientRect();
-        const computedStyles = window.getComputedStyle(headerNav);
-        const lineHeight = parseFloat(computedStyles.lineHeight) || navRect.height;
+        const headerRect = header.getBoundingClientRect();
+        const headerLeftRect = headerLeft.getBoundingClientRect();
+        const contentRect = headerContent.getBoundingClientRect();
 
-        // Учитываем небольшой запас в 16px (паддинги и возможные пробелы)
-        const availableWidth = headerWidth - headerLeftWidth - 16;
-        const shouldCollapse = navWidth > availableWidth || navRect.height > lineHeight + 4;
+        const tolerance = 12;
+        const availableWidth = headerRect.width - headerLeftRect.width - tolerance;
+        const needsCollapse = contentRect.width > availableWidth || contentRect.top > headerRect.top + tolerance;
 
-        // Возвращаем исходные стили после измерения
-        headerNav.style.visibility = '';
-        headerNav.style.position = '';
-        headerNav.style.pointerEvents = '';
-
-        if (shouldCollapse) {
-            if (!isCollapsed) {
-                header.classList.add('nav-collapsed');
-                headerNav.style.display = 'none';
-                menuToggle.style.display = 'flex';
-                isCollapsed = true;
+        if (needsCollapse) {
+            header.classList.add('nav-collapsed');
+            headerNav.style.display = 'none';
+            if (logoutForm) {
+                logoutForm.style.display = 'none';
             }
-        } else {
-            if (isCollapsed) {
-                header.classList.remove('nav-collapsed');
-            }
-            headerNav.style.display = 'flex';
-            menuToggle.style.display = 'none';
-            isCollapsed = false;
+            menuToggle.style.display = 'flex';
         }
     }
 
@@ -70,7 +53,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Инициализация: считаем, что навигация видима по умолчанию
     if (menuToggle) {
         menuToggle.style.display = 'none';
     }

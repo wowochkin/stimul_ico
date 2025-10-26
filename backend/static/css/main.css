@@ -44,12 +44,32 @@ a:hover {
     align-items: center;
     gap: 12px;
     min-width: 0; /* для flex-shrink */
+    flex: 0 1 auto;
 }
 
-.header-left strong {
+.header-left .logo-link {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.header-left .logo-link:hover {
+    text-decoration: underline;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+    flex: 0 1 auto;
+}
+
+.header-content .logout-form {
+    margin-left: 16px;
 }
 
 .header-nav {
@@ -523,6 +543,22 @@ a:hover {
     justify-content: center;
     align-items: center;
     transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.header.nav-collapsed .menu-toggle {
+    display: flex;
+}
+
+.header.nav-collapsed .header-nav {
+    display: none !important;
+}
+
+.header.nav-collapsed .header-content .logout-form {
+    display: none;
+}
+
+.header:not(.nav-collapsed) .menu-toggle {
+    display: none;
 }
 
 .menu-toggle:hover {
