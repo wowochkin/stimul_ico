@@ -486,7 +486,8 @@ class StimulusRequestBulkCreateView(LoginRequiredMixin, PermissionRequiredMixin,
         return Division.objects.none()
 
     def get_campaigns(self):
-        return RequestCampaign.objects.order_by('-opens_at', 'name')
+        # Показываем только открытые кампании для массового назначения
+        return RequestCampaign.objects.filter(status=RequestCampaign.Status.OPEN).order_by('-opens_at', 'name')
 
     def get(self, request, *args, **kwargs):
         division_id = request.GET.get('division')

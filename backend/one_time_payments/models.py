@@ -78,10 +78,14 @@ class RequestCampaign(models.Model):
             self.save(update_fields=['status', 'closed_at'])
             from stimuli.models import StimulusRequest  # локальный импорт во избежание циклов
             base_qs = StimulusRequest.objects.filter(campaign=self)
-            base_qs.update(
-                status=StimulusRequest.Status.ARCHIVED,
-                archived_at=timezone.now(),
-            )
+            
+            # Сохраняем итоговый статус для каждой заявки перед архивированием
+            for request in base_qs:
+                final_status = f"{request.get_status_display()} (Архив)"
+                request.final_status = final_status
+                request.status = StimulusRequest.Status.ARCHIVED
+                request.archived_at = timezone.now()
+                request.save(update_fields=['final_status', 'status', 'archived_at'])
             if archive:
                 self.archive()
 

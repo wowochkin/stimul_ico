@@ -124,6 +124,7 @@ class StimulusRequest(models.Model):
     amount = models.DecimalField('Размер выплаты', max_digits=12, decimal_places=2)
     justification = models.TextField('Обоснование')
     status = models.CharField('Статус', max_length=16, choices=Status.choices, default=Status.PENDING)
+    final_status = models.CharField('Итоговый статус', max_length=32, blank=True, help_text='Статус на момент архивирования кампании')
     admin_comment = models.TextField('Комментарий администратора', blank=True)
     archived_at = models.DateTimeField('В архиве с', blank=True, null=True)
     created_at = models.DateTimeField('Создано', auto_now_add=True)
@@ -140,9 +141,15 @@ class StimulusRequest(models.Model):
         verbose_name = 'Заявка на стимулирование'
         verbose_name_plural = 'Заявки на стимулирование'
 
+    def get_display_status(self):
+        """Возвращает отображаемый статус заявки"""
+        if self.final_status:
+            return self.final_status
+        return self.get_status_display()
+
     def __str__(self):
         campaign = f' · {self.campaign}' if self.campaign else ''
-        return f"{self.employee} — {self.amount} ({self.get_status_display()}){campaign}"
+        return f"{self.employee} — {self.amount} ({self.get_display_status()}){campaign}"
 
     def save(self, *args, **kwargs):
         if self.status != self.Status.ARCHIVED and self.archived_at:
