@@ -46,13 +46,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
         prepareForMeasurement();
 
-        const tolerance = 12;
-        const effectiveWidth = headerContent.scrollWidth;
-        const availableWidth = headerContent.clientWidth + tolerance;
+        // Даём браузеру время на рендер
+        requestAnimationFrame(() => {
+            const headerRect = header.getBoundingClientRect();
+            const headerLeftRect = headerLeft.getBoundingClientRect();
+            const navRect = headerNav.getBoundingClientRect();
 
-        if (effectiveWidth > availableWidth) {
-            applyCollapsedState();
-        }
+            // Проверяем, умещается ли навигация в одну строку с заголовком
+            const isOnSameLine = Math.abs(navRect.top - headerLeftRect.top) < 10;
+            
+            // Проверяем, не выходит ли за границы
+            const fitsInWidth = (headerLeftRect.width + navRect.width + 40) <= headerRect.width;
+
+            const shouldShowNav = isOnSameLine && fitsInWidth;
+
+            if (!shouldShowNav) {
+                applyCollapsedState();
+            }
+        });
     }
 
     function checkNavFit() {
