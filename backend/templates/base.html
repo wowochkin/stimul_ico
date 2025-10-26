@@ -12,7 +12,7 @@
     <div>
         <strong>ИЦО МГПУ · Стимулирующие выплаты</strong>
     </div>
-    <nav>
+    <nav class="header-nav">
         {% if user.is_authenticated %}
             {% if perms.staffing.view_positionquota %}
                 <a href="{% url 'staffing:quota-list' %}">Штатное расписание</a>

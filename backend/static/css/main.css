@@ -28,12 +28,27 @@ a:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+}
+
+.header nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
 }
 
 .header nav a {
     color: #fff;
     margin-left: 16px;
     font-weight: 500;
+    white-space: nowrap;
+}
+
+.header-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .logout-form {
@@ -70,6 +85,26 @@ a:hover {
     overflow-x: auto;
     border-radius: 12px;
     margin-top: 16px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.table-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 .table {
@@ -416,4 +451,201 @@ a:hover {
 .pagination .current {
     background-color: var(--primary);
     color: #fff;
+}
+
+/* Адаптивные стили */
+
+/* Планшеты */
+@media (max-width: 1024px) {
+    .container {
+        padding: clamp(20px, 3vw, 36px);
+    }
+
+    .header {
+        padding: 14px 20px;
+    }
+
+    .header nav {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .header nav a,
+    .header .logout-form {
+        margin-left: 12px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    .table th,
+    .table td {
+        padding: 12px 14px;
+    }
+}
+
+/* Мобильные устройства */
+@media (max-width: 768px) {
+    .container {
+        padding: clamp(16px, 4vw, 24px);
+    }
+
+    .header {
+        padding: 12px 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .header nav {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .header-nav {
+        width: 100%;
+    }
+
+    .header nav a,
+    .header .logout-form {
+        margin-left: 0;
+        margin-right: 12px;
+        font-size: 0.9rem;
+    }
+
+    .logout-form {
+        margin-left: 0 !important;
+    }
+
+    .card {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .table {
+        font-size: 0.85rem;
+    }
+
+    .table thead {
+        font-size: 0.75rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 10px 12px;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        font-size: 0.9rem;
+    }
+
+    .filter-form {
+        overflow-x: auto;
+    }
+
+    .bulk-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .bulk-select {
+        width: 100%;
+    }
+
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .pagination a,
+    .pagination span {
+        padding: 5px 10px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Маленькие мобильные устройства */
+@media (max-width: 480px) {
+    .container {
+        padding: 12px;
+    }
+
+    .header strong {
+        font-size: 0.95rem;
+    }
+
+    .header-nav {
+        gap: 6px;
+    }
+
+    .header nav a,
+    .header .logout-form {
+        font-size: 0.85rem;
+        padding: 4px 0;
+    }
+
+    .card {
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .table {
+        font-size: 0.8rem;
+    }
+
+    .table thead {
+        font-size: 0.7rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 10px;
+    }
+
+    .btn {
+        padding: 7px 12px;
+        font-size: 0.85rem;
+        width: 100%;
+    }
+
+    .btn-primary {
+        width: auto;
+    }
+
+    .form-grid input,
+    .form-grid select,
+    .form-grid textarea {
+        padding: 8px 10px;
+        font-size: 0.9rem;
+    }
+
+    .bulk-actions button {
+        width: 100%;
+    }
+
+    .assignment-row {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+
+    .filter-wrapper {
+        margin-left: -12px;
+        margin-right: -12px;
+        padding: 0 12px;
+    }
+}
+
+/* Большие экраны */
+@media (min-width: 1400px) {
+    .container {
+        padding: 48px;
+    }
 }
