@@ -184,41 +184,36 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+        'simple': {
+            'format': '{levelname} {message}',
             'style': '{',
         },
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
+            'formatter': 'simple',
         },
     },
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'DEBUG',  # Включаем DEBUG для диагностики
+            'level': 'INFO' if not DEBUG else 'DEBUG',
             'propagate': False,
         },
         'django.request': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'WARNING' if not DEBUG else 'DEBUG',
             'propagate': False,
         },
         'django.server': {
             'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'gunicorn.error': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'WARNING' if not DEBUG else 'DEBUG',
             'propagate': False,
         },
         'stimuli': {
             'handlers': ['console'],
-            'level': 'DEBUG',  # Включаем DEBUG временно
+            'level': 'INFO' if not DEBUG else 'DEBUG',
             'propagate': False,
         },
     },
