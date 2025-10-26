@@ -223,12 +223,35 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         filtered_qs = self.filterset.qs
         
         # Добавляем аннотации для определения прав редактирования и удаления
-        if can_view_all_requests(user) and (user.is_staff or user.groups.filter(name='Руководство института').exists()):
-            # Администраторы и руководство института имеют полный доступ
+        if can_view_all_requests(user) and user.is_staff:
+            # Администраторы имеют полный доступ
             return filtered_qs.annotate(
                 can_edit=Value(True, output_field=BooleanField()),
                 can_delete=Value(True, output_field=BooleanField()),
                 can_change_status=Value(True, output_field=BooleanField()),
+            )
+        elif can_view_all_requests(user) and user.groups.filter(name='Руководство института').exists():
+            # Руководство института видит все заявки, но редактировать/удалять может только свои в статусе PENDING
+            return filtered_qs.annotate(
+                can_edit=Case(
+                    When(
+                        requested_by=user,
+                        status=StimulusRequest.Status.PENDING,
+                        then=Value(True)
+                    ),
+                    default=Value(False),
+                    output_field=BooleanField()
+                ),
+                can_delete=Case(
+                    When(
+                        requested_by=user,
+                        status=StimulusRequest.Status.PENDING,
+                        then=Value(True)
+                    ),
+                    default=Value(False),
+                    output_field=BooleanField()
+                ),
+                can_change_status=Value(False, output_field=BooleanField()),
             )
 
         # Для остальных пользователей проверяем права для каждой заявки
