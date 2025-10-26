@@ -82,6 +82,27 @@
                             <td>
                                 <span class="muted">Заявка в архиве</span>
                             </td>
+                        {% elif request.can_change_status and user.is_staff %}
+                            {# Полная форма управления для суперпользователей #}
+                            <td>
+                                <form method="post" action="{% url 'request-status-update' request.pk %}" data-autosubmit="true" data-autosubmit-delay="200">
+                                    {% csrf_token %}
+                                    <div style="display:flex; flex-direction:column; gap:8px;">
+                                        <select name="status">
+                                            {% for value, label in request.Status.choices %}
+                                                <option value="{{ value }}" {% if value == request.status %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <textarea name="admin_comment" rows="2" placeholder="Комментарий" data-autosubmit-delay="1200">{{ request.admin_comment }}</textarea>
+                                        {% if request.can_edit %}
+                                            <a href="{% url 'request-edit' request.pk %}" class="btn btn-text">Редактировать</a>
+                                        {% endif %}
+                                        {% if request.can_delete %}
+                                            <a href="{% url 'request-delete' request.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
+                                        {% endif %}
+                                    </div>
+                                </form>
+                            </td>
                         {% elif request.can_edit or request.can_delete %}
                             <td>
                                 <div style="display:flex; flex-direction:column; gap:8px;">
