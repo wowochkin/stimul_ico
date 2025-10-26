@@ -95,6 +95,14 @@ class RequestCampaign(models.Model):
             from stimuli.models import StimulusRequest  # локальный импорт во избежание циклов
             base_qs = StimulusRequest.objects.filter(campaign=self)
             
+            # Проверяем, что все заявки рассмотрены (одобрены или отклонены)
+            pending_requests = base_qs.filter(status=StimulusRequest.Status.PENDING)
+            if pending_requests.exists():
+                raise ValidationError(
+                    f'Нельзя архивировать кампанию: есть нерассмотренные заявки '
+                    f'({pending_requests.count()} шт.). Все заявки должны быть одобрены или отклонены.'
+                )
+            
             # Сохраняем итоговый статус для каждой заявки при архивировании
             for request in base_qs:
                 final_status = f"{request.get_status_display()} (Архив)"
