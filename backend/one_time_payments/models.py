@@ -72,22 +72,11 @@ class RequestCampaign(models.Model):
     def close(self, *, archive: bool = True, closed_by=None) -> None:
         if self.status != self.Status.OPEN:
             raise ValidationError('Закрыть можно только открытую кампанию.')
-        with transaction.atomic():
-            self.status = self.Status.CLOSED
-            self.closed_at = timezone.now()
-            self.save(update_fields=['status', 'closed_at'])
-            from stimuli.models import StimulusRequest  # локальный импорт во избежание циклов
-            base_qs = StimulusRequest.objects.filter(campaign=self)
-            
-            # Сохраняем итоговый статус для каждой заявки перед архивированием
-            for request in base_qs:
-                final_status = f"{request.get_status_display()} (Архив)"
-                request.final_status = final_status
-                request.status = StimulusRequest.Status.ARCHIVED
-                request.archived_at = timezone.now()
-                request.save(update_fields=['final_status', 'status', 'archived_at'])
-            if archive:
-                self.archive()
+        self.status = self.Status.CLOSED
+        self.closed_at = timezone.now()
+        self.save(update_fields=['status', 'closed_at'])
+        if archive:
+            self.archive()
 
     def reopen(self) -> None:
         """Переоткрывает закрытую кампанию"""
@@ -98,11 +87,26 @@ class RequestCampaign(models.Model):
         self.save(update_fields=['status', 'closed_at'])
 
     def archive(self) -> None:
+        """Архивирует кампанию и все связанные заявки"""
         if self.status not in (self.Status.CLOSED, self.Status.ARCHIVED):
             raise ValidationError('В архив можно отправить только закрытую кампанию.')
-        self.status = self.Status.ARCHIVED
-        self.archived_at = timezone.now()
-        self.save(update_fields=['status', 'archived_at'])
+        
+        with transaction.atomic():
+            from stimuli.models import StimulusRequest  # локальный импорт во избежание циклов
+            base_qs = StimulusRequest.objects.filter(campaign=self)
+            
+            # Сохраняем итоговый статус для каждой заявки при архивировании
+            for request in base_qs:
+                final_status = f"{request.get_status_display()} (Архив)"
+                request.final_status = final_status
+                request.status = StimulusRequest.Status.ARCHIVED
+                request.archived_at = timezone.now()
+                request.save(update_fields=['final_status', 'status', 'archived_at'])
+            
+            # Архивируем саму кампанию
+            self.status = self.Status.ARCHIVED
+            self.archived_at = timezone.now()
+            self.save(update_fields=['status', 'archived_at'])
 
 
 class OneTimePayment(models.Model):
