@@ -104,9 +104,9 @@ def get_accessible_employees(user):
             user_division = user_division_obj.division
             if user_division:
                 return Employee.objects.filter(division=user_division)
-        except UserDivision.DoesNotExist:
-            pass
-        return Employee.objects.none()
+            return Employee.objects.none()
+        except (UserDivision.DoesNotExist, AttributeError):
+            return Employee.objects.none()
     
     # Сотрудники видят только себя
     if is_employee(user):
