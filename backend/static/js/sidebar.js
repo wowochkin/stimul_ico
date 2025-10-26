@@ -26,21 +26,14 @@ document.addEventListener('DOMContentLoaded', function() {
         headerNav.style.display = 'flex';
         
         // Небольшая задержка для корректного измерения после показа
-        requestAnimationFrame(() => {
+        setTimeout(() => {
             const headerRect = header.getBoundingClientRect();
             const navRect = headerNav.getBoundingClientRect();
             
-            // Проверяем, перенеслась ли навигация на новую строку по координатам
-            const isNavOnNewLine = Math.abs(navRect.top - headerLeftRect.top) > 15;
-            
-            // Проверяем, увеличилась ли высота header
+            // Проверяем, увеличилась ли высота header (перенос на новую строку)
             const isHeaderMultiLine = headerRect.height > headerHeightWithoutNav + 15;
             
-            // Также проверяем ширину - сумма заголовка и навигации не должна превышать header
-            const totalWidth = headerLeftRect.width + navRect.width + 48; // 48px padding header
-            const isWidthExceeded = totalWidth > headerRect.width;
-            
-            const isOverflowing = isHeaderMultiLine || isNavOnNewLine || isWidthExceeded;
+            const isOverflowing = isHeaderMultiLine;
             
             // Если не умещается - скрываем навигацию и показываем кнопку
             if (isOverflowing) {
@@ -52,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 menuToggle.style.display = 'none';
                 header.classList.remove('nav-collapsed');
             }
-        });
+        }, 50);
     }
 
     // При загрузке скрываем всё для предотвращения мигания
