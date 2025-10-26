@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
@@ -88,12 +88,27 @@ class RequestCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, gen
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         campaign = self.object
+        
+        # Формируем список доступных действий в зависимости от статуса кампании
+        available_actions = []
+        if campaign.status == RequestCampaign.Status.DRAFT:
+            available_actions = [('open', 'Открыть')]
+        elif campaign.status == RequestCampaign.Status.OPEN:
+            available_actions = [('close', 'Закрыть')]
+        elif campaign.status == RequestCampaign.Status.CLOSED:
+            available_actions = [('reopen', 'Переоткрыть'), ('archive', 'Переместить в архив')]
+        # Для ARCHIVED действий нет
+        
         context['status_form'] = RequestCampaignStatusForm()
+        context['available_actions'] = available_actions
         context['stimulus_status_form'] = StimulusRequestStatusForm()
         # Добавляем одобренные заявки для отображения в разделе "Разовые выплаты"
+        # Включаем как текущие одобренные, так и одобренные до архивирования
         context['approved_requests'] = StimulusRequest.objects.filter(
-            campaign=campaign,
-            status=StimulusRequest.Status.APPROVED
+            campaign=campaign
+        ).filter(
+            Q(status=StimulusRequest.Status.APPROVED) | 
+            Q(status=StimulusRequest.Status.ARCHIVED, final_status__icontains='Одобрено')
         ).select_related('employee', 'requested_by')
         return context
 
@@ -255,9 +270,12 @@ class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredM
         )
         
         # Получаем одобренные заявки кампании
+        # Включаем как текущие одобренные, так и одобренные до архивирования
         approved_requests = StimulusRequest.objects.filter(
-            campaign=campaign,
-            status=StimulusRequest.Status.APPROVED
+            campaign=campaign
+        ).filter(
+            Q(status=StimulusRequest.Status.APPROVED) | 
+            Q(status=StimulusRequest.Status.ARCHIVED, final_status__icontains='Одобрено')
         ).select_related('employee', 'requested_by', 'employee__division', 'employee__position').order_by('employee__full_name')
         
         # Создаем Excel файл
@@ -289,13 +307,20 @@ class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredM
         
         # Данные
         for request in approved_requests:
+            # Получаем имя ответственного
+            responsible_name = request.requested_by.username
+            if hasattr(request.requested_by, 'get_full_name'):
+                full_name = request.requested_by.get_full_name()
+                if full_name:
+                    responsible_name = full_name
+            
             sheet.append([
                 request.employee.full_name,
                 request.employee.division.name if request.employee.division else '',
                 request.employee.position.name if request.employee.position else '',
                 float(request.amount),
                 request.justification,
-                request.requested_by.get_full_name() if hasattr(request.requested_by, 'get_full_name') else request.requested_by.username,
+                responsible_name,
                 request.admin_comment or '',
                 request.created_at.strftime('%d.%m.%Y %H:%M')
             ])

@@ -20,19 +20,21 @@
         <p style="margin-bottom:24px; white-space:pre-wrap;">{{ campaign.description }}</p>
     {% endif %}
     {% if perms.one_time_payments.change_requestcampaign %}
-        <section style="margin-bottom:24px;">
-            <h3>Управление статусом</h3>
-            <form method="post" action="{% url 'one_time_payments:campaign-status' campaign.pk %}" class="form-inline">
-                {% csrf_token %}
-                <label for="action">Действие</label>
-                <select name="action" id="action">
-                    {% for value, label in status_form.fields.action.choices %}
-                        <option value="{{ value }}" {% if campaign.status == 'draft' and value == 'open' %}selected{% elif campaign.status == 'open' and value == 'close' %}selected{% elif campaign.status == 'closed' and value == 'reopen' %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="btn btn-primary">Применить</button>
-            </form>
-        </section>
+        {% if available_actions %}
+            <section style="margin-bottom:24px;">
+                <h3>Управление статусом</h3>
+                <form method="post" action="{% url 'one_time_payments:campaign-status' campaign.pk %}" class="form-inline">
+                    {% csrf_token %}
+                    <label for="action">Действие</label>
+                    <select name="action" id="action">
+                        {% for value, label in available_actions %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary">Применить</button>
+                </form>
+            </section>
+        {% endif %}
     {% endif %}
     <section style="margin-bottom:32px;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
@@ -63,7 +65,7 @@
                             <td><span class="status status-{{ request.status }}">{{ request.get_display_status }}</span></td>
                             <td>{{ request.requested_by.get_full_name|default:request.requested_by.username }}</td>
                             <td>{{ request.admin_comment|default:'—' }}</td>
-                            {% if perms.stimuli.change_stimulusrequest %}
+                            {% if perms.stimuli.change_stimulusrequest and request.status != 'archived' %}
                                 <td>
                                     <form method="post" action="{% url 'one_time_payments:campaign-request-status' campaign.pk request.pk %}" style="display:flex; flex-direction:column; gap:8px;">
                                         {% csrf_token %}
