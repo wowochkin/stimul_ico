@@ -117,11 +117,9 @@ class StimulusRequest(models.Model):
     )
     campaign = models.ForeignKey(
         'one_time_payments.RequestCampaign',
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         related_name='stimulus_requests',
         verbose_name='Кампания',
-        blank=True,
-        null=True,
     )
     amount = models.DecimalField('Размер выплаты', max_digits=12, decimal_places=2)
     justification = models.TextField('Обоснование')

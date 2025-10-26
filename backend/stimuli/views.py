@@ -531,16 +531,19 @@ class StimulusRequestBulkCreateView(LoginRequiredMixin, PermissionRequiredMixin,
             return self.render_to_response(self._build_context(None, campaign_id=campaign_id))
 
         campaign = None
-        if campaign_id:
-            try:
-                campaign_pk = int(campaign_id)
-                campaign = RequestCampaign.objects.get(pk=campaign_pk)
-                if campaign.status == RequestCampaign.Status.DRAFT:
-                    messages.error(request, 'Кампания в статусе "Черновик" недоступна для заявок.')
-                    return self.render_to_response(self._build_context(division_id, employees, request.POST, campaign_id=campaign_id))
-            except (TypeError, ValueError, RequestCampaign.DoesNotExist):
-                messages.error(request, 'Некорректная кампания.')
+        if not campaign_id:
+            messages.error(request, 'Необходимо выбрать кампанию.')
+            return self.render_to_response(self._build_context(division_id, employees, request.POST, campaign_id=campaign_id))
+        
+        try:
+            campaign_pk = int(campaign_id)
+            campaign = RequestCampaign.objects.get(pk=campaign_pk)
+            if campaign.status == RequestCampaign.Status.DRAFT:
+                messages.error(request, 'Кампания в статусе "Черновик" недоступна для заявок.')
                 return self.render_to_response(self._build_context(division_id, employees, request.POST, campaign_id=campaign_id))
+        except (TypeError, ValueError, RequestCampaign.DoesNotExist):
+            messages.error(request, 'Некорректная кампания.')
+            return self.render_to_response(self._build_context(division_id, employees, request.POST, campaign_id=campaign_id))
 
         created = 0
         affected_employees = []

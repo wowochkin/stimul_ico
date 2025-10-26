@@ -27,9 +27,9 @@
                 <input type="hidden" name="division" value="{{ selected_division }}">
                 <div class="form-grid" style="margin-bottom:16px;">
                     <div>
-                        <label for="campaign-select">Кампания</label>
-                        <select id="campaign-select" name="campaign">
-                            <option value="">— Без кампании —</option>
+                        <label for="campaign-select">Кампания <span style="color: red;">*</span></label>
+                        <select id="campaign-select" name="campaign" required>
+                            <option value="">— Выберите кампанию —</option>
                             {% for campaign in campaigns %}
                                 <option value="{{ campaign.id }}" {% if campaign.id|stringformat:'s' == selected_campaign %}selected{% endif %}>{{ campaign.name }} ({{ campaign.get_status_display }})</option>
                             {% endfor %}
