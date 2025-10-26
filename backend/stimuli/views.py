@@ -219,25 +219,29 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         
         # Добавляем аннотации для определения прав редактирования и удаления
         if can_view_all_requests(user):
-            # Для пользователей с can_view_all, но не администраторов, ограничиваем права только своими заявками
+            # Для пользователей с can_view_all, но не администраторов, ограничиваем права только своими заявками в статусе PENDING
             if not user.is_staff:
-                # Проверяем, является ли заявка пользователя своей (requested_by == user)
+                # Проверяем, является ли заявка пользователя своей и в статусе PENDING (requested_by == user AND status == PENDING)
                 filtered_qs = filtered_qs.annotate(
                     can_edit=Case(
-                        When(requested_by=user, then=Value(True)),
+                        When(
+                            requested_by=user,
+                            status=StimulusRequest.Status.PENDING,
+                            then=Value(True)
+                        ),
                         default=Value(False),
                         output_field=BooleanField()
                     ),
                     can_delete=Case(
-                        When(requested_by=user, then=Value(True)),
+                        When(
+                            requested_by=user,
+                            status=StimulusRequest.Status.PENDING,
+                            then=Value(True)
+                        ),
                         default=Value(False),
                         output_field=BooleanField()
                     ),
-                    can_change_status=Case(
-                        When(requested_by=user, then=Value(True)),
-                        default=Value(False),
-                        output_field=BooleanField()
-                    ),
+                    can_change_status=Value(False, output_field=BooleanField()),
                 )
                 return filtered_qs
             else:
