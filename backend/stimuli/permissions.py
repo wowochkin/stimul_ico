@@ -79,6 +79,10 @@ def can_edit_request(user, request_obj):
     except UserDivision.DoesNotExist:
         pass
     
+    # Руководители департамента могут редактировать только свои заявки в статусе "На рассмотрении"
+    if is_department_manager(user) and request_obj.requested_by == user:
+        return request_obj.status == request_obj.Status.PENDING
+    
     # Сотрудники могут редактировать только свои заявки в статусе "На рассмотрении"
     if is_employee(user) and request_obj.requested_by == user:
         return request_obj.status == request_obj.Status.PENDING
