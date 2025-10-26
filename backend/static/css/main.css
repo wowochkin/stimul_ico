@@ -93,11 +93,19 @@ a:hover {
 }
 
 .header-nav {
-    display: flex;
+    display: none; /* Скрыто по умолчанию, покажем через JS */
     flex-wrap: nowrap; /* НЕ переносим элементы навигации внутри */
     align-items: center;
     gap: 8px;
     min-width: 0;
+}
+
+.header:not(.nav-initializing) .header-nav {
+    display: flex;
+}
+
+.header.nav-collapsed .header-nav {
+    display: none !important;
 }
 
 .header-nav a {
@@ -569,15 +577,7 @@ a:hover {
     display: flex;
 }
 
-.header.nav-collapsed .header-nav {
-    display: none !important;
-}
-
 .header.nav-collapsed .header-content .logout-form {
-    display: none;
-}
-
-.header:not(.nav-collapsed) .menu-toggle {
     display: none;
 }
 
