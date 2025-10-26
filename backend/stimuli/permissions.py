@@ -25,7 +25,22 @@ def get_user_division(user):
 
 def can_view_all_requests(user):
     """Проверяет, может ли пользователь видеть все заявки"""
-    return user.has_perm('stimuli.view_all_requests') or user.is_staff
+    # Администраторы видят все заявки
+    if user.is_staff:
+        return True
+    
+    # Проверяем право видеть все заявки
+    if user.has_perm('stimuli.view_all_requests'):
+        return True
+    
+    # Руководители департамента с флагом can_view_all видят все заявки
+    if is_department_manager(user):
+        try:
+            return user.user_division.can_view_all
+        except UserDivision.DoesNotExist:
+            return False
+    
+    return False
 
 
 def can_change_request_status(user, request_obj):
