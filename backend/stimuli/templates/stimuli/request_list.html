@@ -78,48 +78,26 @@
                         <td>{{ request.requested_by.get_full_name|default:request.requested_by.username }}</td>
                         <td>{{ request.justification|linebreaksbr }}</td>
                         <td>{{ request.admin_comment|linebreaksbr }}</td>
-                        {% if request.can_change_status %}
+                        {% if request.status == 'archived' %}
                             <td>
-                                {% if request.status != 'archived' %}
-                                    <form method="post" action="{% url 'request-status-update' request.pk %}" data-autosubmit="true" data-autosubmit-delay="200">
-                                        {% csrf_token %}
-                                        <div style="display:flex; flex-direction:column; gap:8px;">
-                                            {% if request.can_edit or request.can_delete %}
-                                                <select name="status">
-                                                    {% for value, label in request.Status.choices %}
-                                                        <option value="{{ value }}" {% if value == request.status %}selected{% endif %}>{{ label }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                                <textarea name="admin_comment" rows="2" placeholder="Комментарий" data-autosubmit-delay="1200">{{ request.admin_comment }}</textarea>
-                                                {% if request.can_edit %}
-                                                    <a href="{% url 'request-edit' request.pk %}" class="btn btn-text">Редактировать</a>
-                                                {% endif %}
-                                                {% if request.can_delete %}
-                                                    <a href="{% url 'request-delete' request.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
-                                                {% endif %}
-                                            {% else %}
-                                                <span class="muted">Нет прав на управление</span>
-                                            {% endif %}
-                                        </div>
-                                    </form>
-                                {% else %}
-                                    <span class="muted">Заявка в архиве</span>
-                                {% endif %}
+                                <span class="muted">Заявка в архиве</span>
                             </td>
-                    {% elif request.can_edit or request.can_delete %}
-                        <td>
-                            <div style="display:flex; flex-direction:column; gap:8px;">
-                                {% if request.can_edit %}
-                                    <a href="{% url 'request-edit' request.pk %}" class="btn btn-text">Редактировать</a>
-                                {% endif %}
-                                {% if request.can_delete %}
-                                    <a href="{% url 'request-delete' request.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
-                                {% endif %}
-                            </div>
-                        </td>
-                    {% elif show_manage_column %}
-                        <td></td>
-                    {% endif %}
+                        {% elif request.can_edit or request.can_delete %}
+                            <td>
+                                <div style="display:flex; flex-direction:column; gap:8px;">
+                                    {% if request.can_edit %}
+                                        <a href="{% url 'request-edit' request.pk %}" class="btn btn-text">Редактировать</a>
+                                    {% endif %}
+                                    {% if request.can_delete %}
+                                        <a href="{% url 'request-delete' request.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        {% else %}
+                            <td>
+                                <span class="muted">Нет прав на управление</span>
+                            </td>
+                        {% endif %}
                     </tr>
                 {% empty %}
                     <tr>
