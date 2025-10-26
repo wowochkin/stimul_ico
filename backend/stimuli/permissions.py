@@ -2,7 +2,15 @@ from .models import UserDivision
 
 
 def is_department_manager(user):
-    """Проверяет, является ли пользователь руководителем департамента или руководством института"""
+    """Проверяет, является ли пользователь руководителем департамента или имеет доступ ко всем сотрудникам"""
+    # Проверяем флаг can_view_all в UserDivision
+    try:
+        if user.user_division.can_view_all:
+            return True
+    except UserDivision.DoesNotExist:
+        pass
+    
+    # Также проверяем группы для обратной совместимости
     return user.groups.filter(name__in=['Руководитель департамента', 'Руководство института']).exists()
 
 
@@ -33,12 +41,12 @@ def can_view_all_requests(user):
     if user.has_perm('stimuli.view_all_requests'):
         return True
     
-    # Руководители департамента с флагом can_view_all видят все заявки
-    if is_department_manager(user):
-        try:
-            return user.user_division.can_view_all
-        except UserDivision.DoesNotExist:
-            return False
+    # Любой пользователь с флагом can_view_all видит все заявки
+    try:
+        if user.user_division.can_view_all:
+            return True
+    except UserDivision.DoesNotExist:
+        pass
     
     return False
 
@@ -93,14 +101,17 @@ def get_accessible_employees(user):
     if user.is_staff:
         return Employee.objects.all()
     
-    # Руководители департамента видят сотрудников своего подразделения или всех, если есть право can_view_all
+    # Проверяем флаг can_view_all - если установлен, возвращаем всех сотрудников
+    try:
+        if user.user_division.can_view_all:
+            return Employee.objects.all()
+    except (UserDivision.DoesNotExist, AttributeError):
+        pass
+    
+    # Руководители департамента видят сотрудников своего подразделения
     if is_department_manager(user):
         try:
             user_division_obj = user.user_division
-            # Если установлен флаг "доступ ко всем сотрудникам"
-            if user_division_obj.can_view_all:
-                return Employee.objects.all()
-            # Иначе видит только сотрудников своего подразделения
             user_division = user_division_obj.division
             if user_division:
                 return Employee.objects.filter(division=user_division)
