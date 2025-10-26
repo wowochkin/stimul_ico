@@ -78,6 +78,14 @@ a:hover {
 .header.nav-initializing .header-content .logout-form,
 .header.nav-initializing .menu-toggle {
     visibility: hidden;
+    opacity: 0;
+}
+
+/* Скрываем навигацию до инициализации */
+.header .header-nav,
+.header .header-content .logout-form,
+.header .menu-toggle {
+    transition: opacity 0.2s ease;
 }
 
 .header-content .logout-form {
