@@ -67,15 +67,14 @@
                             <td>{{ request.admin_comment|default:'—' }}</td>
                             {% if perms.stimuli.change_stimulusrequest and request.status != 'archived' %}
                                 <td>
-                                    <form method="post" action="{% url 'one_time_payments:campaign-request-status' campaign.pk request.pk %}" style="display:flex; flex-direction:column; gap:8px;">
+                                    <form method="post" action="{% url 'one_time_payments:campaign-request-status' campaign.pk request.pk %}" data-autosubmit="true" data-autosubmit-delay="200" style="display:flex; flex-direction:column; gap:8px;">
                                         {% csrf_token %}
                                         <select name="status">
                                             {% for value, label in request.Status.choices %}
                                                 <option value="{{ value }}" {% if value == request.status %}selected{% endif %}>{{ label }}</option>
                                             {% endfor %}
                                         </select>
-                                        <textarea name="admin_comment" rows="2" placeholder="Комментарий администратора">{{ request.admin_comment }}</textarea>
-                                        <button type="submit" class="btn btn-text">Сохранить</button>
+                                        <textarea name="admin_comment" rows="2" placeholder="Комментарий администратора" data-autosubmit-delay="1200">{{ request.admin_comment }}</textarea>
                                     </form>
                                 </td>
                             {% endif %}

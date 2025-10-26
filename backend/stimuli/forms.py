@@ -115,24 +115,10 @@ class StimulusRequestForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Ограничиваем выбор кампаний в зависимости от роли пользователя
-        if user:
-            from .permissions import is_employee, is_department_manager
-            if is_employee(user) or is_department_manager(user):
-                # Сотрудники и руководители департамента видят только открытые кампании
-                self.fields['campaign'].queryset = RequestCampaign.objects.filter(
-                    status=RequestCampaign.Status.OPEN
-                ).order_by('-opens_at', 'name')
-            else:
-                # Администраторы видят все кампании кроме черновиков
-                self.fields['campaign'].queryset = RequestCampaign.objects.exclude(
-                    status=RequestCampaign.Status.DRAFT
-                ).order_by('-opens_at', 'name')
-        else:
-            # По умолчанию показываем все кампании кроме черновиков
-            self.fields['campaign'].queryset = RequestCampaign.objects.exclude(
-                status=RequestCampaign.Status.DRAFT
-            ).order_by('-opens_at', 'name')
+        # Все пользователи видят только открытые кампании для создания заявок
+        self.fields['campaign'].queryset = RequestCampaign.objects.filter(
+            status=RequestCampaign.Status.OPEN
+        ).order_by('-opens_at', 'name')
         
         self.fields['campaign'].required = True
         
@@ -149,8 +135,11 @@ class StimulusRequestForm(forms.ModelForm):
 
     def clean_campaign(self):
         campaign = self.cleaned_data.get('campaign')
-        if campaign and campaign.status == campaign.Status.DRAFT:
-            raise forms.ValidationError('Нельзя привязывать заявку к кампании в статусе черновика.')
+        if campaign:
+            if campaign.status == RequestCampaign.Status.DRAFT:
+                raise forms.ValidationError('Нельзя привязывать заявку к кампании в статусе черновика.')
+            if campaign.status != RequestCampaign.Status.OPEN:
+                raise forms.ValidationError('Нельзя привязывать заявку к закрытой или архивированной кампании.')
         return campaign
 
 
