@@ -464,6 +464,45 @@ a:hover {
     color: #fff;
 }
 
+/* Page header with actions */
+.page-header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.page-header-actions h2 {
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-success {
+    background-color: #10b981;
+    color: #fff;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+}
+
+.btn-info {
+    background-color: #3b82f6;
+    color: #fff;
+}
+
+.btn-info:hover {
+    background-color: #2563eb;
+}
+
 /* Кнопка бургер-меню */
 .menu-toggle {
     display: none;
@@ -673,6 +712,26 @@ a:hover {
         margin-bottom: 16px;
     }
 
+    .page-header-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .page-header-actions h2 {
+        width: 100%;
+    }
+
+    .action-buttons {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .action-buttons .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
     .form-grid {
         grid-template-columns: 1fr;
     }
@@ -729,6 +788,19 @@ a:hover {
 
     .header-left strong {
         font-size: 0.85rem;
+    }
+
+    .page-header-actions {
+        gap: 8px;
+    }
+
+    .page-header-actions h2 {
+        font-size: 1.25rem;
+    }
+
+    .action-buttons .btn {
+        font-size: 0.85rem;
+        padding: 8px 12px;
     }
 
     .card {

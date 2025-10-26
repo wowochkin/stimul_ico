@@ -4,9 +4,9 @@
 
 {% block content %}
 <div class="card content-card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+    <div class="page-header-actions">
         <h2>Сотрудники</h2>
-        <div style="display:flex; gap:8px;">
+        <div class="action-buttons">
             {% if perms.stimuli.view_employee %}
                 <a class="btn btn-success" href="{% url 'employee-excel-template' %}">
                     <i class="fas fa-download"></i>
