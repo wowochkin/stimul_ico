@@ -37,6 +37,10 @@ def can_view_all_requests(user):
     if user.is_staff:
         return True
     
+    # Группа "Руководство института" видит все заявки
+    if user.groups.filter(name='Руководство института').exists():
+        return True
+    
     # Проверяем право видеть все заявки
     if user.has_perm('stimuli.view_all_requests'):
         return True

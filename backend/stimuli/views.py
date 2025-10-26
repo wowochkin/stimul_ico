@@ -201,12 +201,13 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         user = self.request.user
         
         # Определяем базовый queryset в зависимости от прав пользователя
-        if can_view_all_requests(user) and user.is_staff:
-            # Администраторы видят все заявки
-            base_qs = qs
-        elif can_view_all_requests(user) and not user.is_staff:
-            # Пользователи с can_view_all (но не администраторы) видят только свои заявки
-            base_qs = qs.filter(requested_by=user)
+        if can_view_all_requests(user):
+            # Администраторы, руководство института и пользователи с can_view_all видят все заявки
+            if user.is_staff or user.groups.filter(name='Руководство института').exists():
+                base_qs = qs
+            else:
+                # Пользователи с can_view_all (но не администраторы и не руководство института) видят только свои заявки
+                base_qs = qs.filter(requested_by=user)
         elif is_department_manager(user):
             user_division = get_user_division(user)
             if user_division:
@@ -222,8 +223,8 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         filtered_qs = self.filterset.qs
         
         # Добавляем аннотации для определения прав редактирования и удаления
-        if can_view_all_requests(user) and user.is_staff:
-            # Администраторы имеют полный доступ
+        if can_view_all_requests(user) and (user.is_staff or user.groups.filter(name='Руководство института').exists()):
+            # Администраторы и руководство института имеют полный доступ
             return filtered_qs.annotate(
                 can_edit=Value(True, output_field=BooleanField()),
                 can_delete=Value(True, output_field=BooleanField()),
