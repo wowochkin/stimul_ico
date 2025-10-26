@@ -6,82 +6,86 @@ document.addEventListener('DOMContentLoaded', function() {
     const overlay = document.getElementById('sidebar-overlay');
     const headerNav = document.querySelector('.header-nav');
 
-    // Переменная для хранения текущего состояния
     let isCollapsed = false;
-    let isChecking = false;
-    
-    // Проверка, умещается ли навигация в одну строку
-    function checkNavFit() {
-        if (!headerNav || !menuToggle || isChecking) return;
-        
-        isChecking = true;
-        
-        const header = document.querySelector('.header');
-        const headerLeft = document.querySelector('.header-left');
-        
-        if (!header || !headerLeft) {
-            isChecking = false;
+    let pendingRaf = null;
+
+    function measureNavFit() {
+        if (!headerNav || !menuToggle) {
             return;
         }
-        
-        // Сохраняем текущее состояние видимости
-        const currentNavDisplay = headerNav.style.display;
-        const currentToggleDisplay = menuToggle.style.display;
-        
-        // Скрываем навигацию для измерения
-        headerNav.style.display = 'none';
-        menuToggle.style.display = 'none';
-        
-        requestAnimationFrame(() => {
-            // Измеряем высоту без навигации
-            const headerHeightWithoutNav = header.getBoundingClientRect().height;
-            
-            // Показываем навигацию для измерения
+
+        const header = document.querySelector('.header');
+        const headerLeft = document.querySelector('.header-left');
+
+        if (!header || !headerLeft) {
+            return;
+        }
+
+        // Подготавливаем навигацию к измерению, делаем её невидимой, но сохраняем размеры
+        headerNav.style.display = 'flex';
+        headerNav.style.visibility = 'hidden';
+        headerNav.style.position = 'absolute';
+        headerNav.style.pointerEvents = 'none';
+
+        const headerWidth = header.clientWidth;
+        const headerLeftWidth = headerLeft.offsetWidth;
+        const navWidth = headerNav.scrollWidth;
+        const navRect = headerNav.getBoundingClientRect();
+        const computedStyles = window.getComputedStyle(headerNav);
+        const lineHeight = parseFloat(computedStyles.lineHeight) || navRect.height;
+
+        // Учитываем небольшой запас в 16px (паддинги и возможные пробелы)
+        const availableWidth = headerWidth - headerLeftWidth - 16;
+        const shouldCollapse = navWidth > availableWidth || navRect.height > lineHeight + 4;
+
+        // Возвращаем исходные стили после измерения
+        headerNav.style.visibility = '';
+        headerNav.style.position = '';
+        headerNav.style.pointerEvents = '';
+
+        if (shouldCollapse) {
+            if (!isCollapsed) {
+                header.classList.add('nav-collapsed');
+                headerNav.style.display = 'none';
+                menuToggle.style.display = 'flex';
+                isCollapsed = true;
+            }
+        } else {
+            if (isCollapsed) {
+                header.classList.remove('nav-collapsed');
+            }
             headerNav.style.display = 'flex';
-            
-            requestAnimationFrame(() => {
-                const headerRect = header.getBoundingClientRect();
-                
-                // Проверяем, увеличилась ли высота header (перенос на новую строку)
-                const shouldCollapse = headerRect.height > headerHeightWithoutNav + 15;
-                
-                // Всегда обновляем состояние на основе реальной проверки
-                isCollapsed = shouldCollapse;
-                
-                if (shouldCollapse) {
-                    headerNav.style.display = 'none';
-                    menuToggle.style.display = 'flex';
-                    header.classList.add('nav-collapsed');
-                } else {
-                    headerNav.style.display = 'flex';
-                    menuToggle.style.display = 'none';
-                    header.classList.remove('nav-collapsed');
-                }
-                
-                isChecking = false;
-            });
+            menuToggle.style.display = 'none';
+            isCollapsed = false;
+        }
+    }
+
+    function checkNavFit() {
+        if (pendingRaf) {
+            cancelAnimationFrame(pendingRaf);
+        }
+        pendingRaf = requestAnimationFrame(() => {
+            pendingRaf = null;
+            measureNavFit();
         });
     }
 
-    // Первичная инициализация: предполагаем что навигация видна по умолчанию
+    // Инициализация: считаем, что навигация видима по умолчанию
     if (menuToggle) {
         menuToggle.style.display = 'none';
     }
     if (headerNav) {
         headerNav.style.display = 'flex';
     }
-    
-    // Первичная проверка с небольшой задержкой
+
     setTimeout(checkNavFit, 100);
 
-    // Проверка при изменении размера окна
     let resizeTimeout;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(checkNavFit, 250);
+        resizeTimeout = setTimeout(checkNavFit, 150);
     });
 
-    // Открытие сайдбара
     if (menuToggle) {
         menuToggle.addEventListener('click', function() {
             sidebar.classList.add('active');
@@ -91,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Закрытие сайдбара
     function closeSidebar() {
         sidebar.classList.remove('active');
         overlay.classList.remove('active');
@@ -109,7 +112,6 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.addEventListener('click', closeSidebar);
     }
 
-    // Закрытие сайдбара при клике на ссылку
     const sidebarLinks = sidebar.querySelectorAll('a');
     sidebarLinks.forEach(link => {
         link.addEventListener('click', function() {
@@ -117,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Закрытие сайдбара клавишей Escape
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape' && sidebar.classList.contains('active')) {
             closeSidebar();
