@@ -9,7 +9,12 @@
 </head>
 <body>
 <header class="header">
-    <div>
+    <div class="header-left">
+        <button class="menu-toggle" id="menu-toggle" aria-label="Открыть меню">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
         <strong>ИЦО МГПУ · Стимулирующие выплаты</strong>
     </div>
     <nav class="header-nav">
@@ -41,6 +46,45 @@
         {% endif %}
     </nav>
 </header>
+
+<!-- Сайдбар -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <strong>Меню</strong>
+        <button class="menu-close" id="menu-close" aria-label="Закрыть меню">×</button>
+    </div>
+    <nav class="sidebar-nav">
+        {% if user.is_authenticated %}
+            {% if perms.staffing.view_positionquota %}
+                <a href="{% url 'staffing:quota-list' %}">Штатное расписание</a>
+            {% endif %}
+            {% if perms.recurring_payments.view_recurringperiod %}
+                <a href="{% url 'recurring_payments:period-list' %}">Постоянные выплаты</a>
+            {% endif %}
+            {% if perms.stimuli.view_employee %}
+                <a href="{% url 'employee-list' %}">Сотрудники</a>
+            {% endif %}
+            {% if perms.one_time_payments.view_requestcampaign %}
+                <a href="{% url 'one_time_payments:campaign-list' %}">Заявки и разовые выплаты</a>
+            {% else %}
+                <a href="{% url 'request-list' %}">Заявки</a>
+            {% endif %}
+            {% if perms.dashboard.view_dashboard %}
+                <a href="{% url 'dashboard:overview' %}">Дэшборд</a>
+            {% endif %}
+            {% if user.is_staff %}
+                <a href="{% url 'admin:index' %}">Админка</a>
+            {% endif %}
+            <form method="post" action="{% url 'logout' %}" class="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="logout-link sidebar-logout">Выйти</button>
+            </form>
+        {% endif %}
+    </nav>
+</aside>
+
+<!-- Overlay для затемнения фона -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
 <div class="container">
     {% if messages %}
         <div class="messages">
@@ -53,6 +97,7 @@
 </div>
 <script src="{% static 'js/autosubmit.js' %}"></script>
 <script src="{% static 'js/bulk-actions.js' %}"></script>
+<script src="{% static 'js/sidebar.js' %}"></script>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>
