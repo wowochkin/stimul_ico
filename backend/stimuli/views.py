@@ -201,8 +201,12 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         user = self.request.user
         
         # Определяем базовый queryset в зависимости от прав пользователя
-        if can_view_all_requests(user):
-            base_qs = qs  # Видит все заявки
+        if can_view_all_requests(user) and user.is_staff:
+            # Администраторы видят все заявки
+            base_qs = qs
+        elif can_view_all_requests(user) and not user.is_staff:
+            # Пользователи с can_view_all (но не администраторы) видят только свои заявки
+            base_qs = qs.filter(requested_by=user)
         elif is_department_manager(user):
             user_division = get_user_division(user)
             if user_division:
@@ -218,39 +222,13 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         filtered_qs = self.filterset.qs
         
         # Добавляем аннотации для определения прав редактирования и удаления
-        if can_view_all_requests(user):
-            # Для пользователей с can_view_all, но не администраторов, ограничиваем права только своими заявками в статусе PENDING
-            if not user.is_staff:
-                # Проверяем, является ли заявка пользователя своей и в статусе PENDING (requested_by == user AND status == PENDING)
-                filtered_qs = filtered_qs.annotate(
-                    can_edit=Case(
-                        When(
-                            requested_by=user,
-                            status=StimulusRequest.Status.PENDING,
-                            then=Value(True)
-                        ),
-                        default=Value(False),
-                        output_field=BooleanField()
-                    ),
-                    can_delete=Case(
-                        When(
-                            requested_by=user,
-                            status=StimulusRequest.Status.PENDING,
-                            then=Value(True)
-                        ),
-                        default=Value(False),
-                        output_field=BooleanField()
-                    ),
-                    can_change_status=Value(False, output_field=BooleanField()),
-                )
-                return filtered_qs
-            else:
-                # Администраторы имеют полный доступ
-                return filtered_qs.annotate(
-                    can_edit=Value(True, output_field=BooleanField()),
-                    can_delete=Value(True, output_field=BooleanField()),
-                    can_change_status=Value(True, output_field=BooleanField()),
-                )
+        if can_view_all_requests(user) and user.is_staff:
+            # Администраторы имеют полный доступ
+            return filtered_qs.annotate(
+                can_edit=Value(True, output_field=BooleanField()),
+                can_delete=Value(True, output_field=BooleanField()),
+                can_change_status=Value(True, output_field=BooleanField()),
+            )
 
         # Для остальных пользователей проверяем права для каждой заявки
         annotated_qs = filtered_qs.annotate(
