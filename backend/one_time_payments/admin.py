@@ -27,6 +27,13 @@ class RequestCampaignAdmin(admin.ModelAdmin):
     inlines = [StimulusRequestInline]
     actions = ['delete_with_requests']
 
+    def get_actions(self, request):
+        """Убираем стандартное действие удаления"""
+        actions = super().get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
     @admin.action(description='Удалить кампанию и связанные заявки')
     def delete_with_requests(self, request, queryset):
         """Удаляет выбранные кампании вместе со всеми связанными заявками"""
