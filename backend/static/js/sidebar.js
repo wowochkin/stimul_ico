@@ -13,39 +13,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let pendingRaf = null;
 
+    function prepareForMeasurement() {
+        header.classList.remove('nav-collapsed');
+        if (headerNav) {
+            headerNav.style.display = 'flex';
+        }
+        if (logoutForm) {
+            logoutForm.style.display = 'inline';
+        }
+        if (menuToggle) {
+            menuToggle.style.display = 'none';
+        }
+    }
+
+    function applyCollapsedState() {
+        header.classList.add('nav-collapsed');
+        if (headerNav) {
+            headerNav.style.display = 'none';
+        }
+        if (logoutForm) {
+            logoutForm.style.display = 'none';
+        }
+        if (menuToggle) {
+            menuToggle.style.display = 'flex';
+        }
+    }
+
     function measureNavFit() {
         if (!header || !headerLeft || !headerContent || !headerNav || !menuToggle) {
             return;
         }
 
-        headerNav.style.display = 'flex';
-        if (logoutForm) {
-            logoutForm.style.display = 'inline';
-        }
-        menuToggle.style.display = 'none';
-
-        const headerRect = header.getBoundingClientRect();
-        const headerLeftRect = headerLeft.getBoundingClientRect();
-        const contentRect = headerContent.getBoundingClientRect();
+        prepareForMeasurement();
 
         const tolerance = 12;
-        const availableWidth = headerRect.width - headerLeftRect.width - tolerance;
-        const needsCollapse = contentRect.width > availableWidth || contentRect.top > headerRect.top + tolerance;
+        const effectiveWidth = headerContent.scrollWidth;
+        const availableWidth = headerContent.clientWidth + tolerance;
 
-        if (needsCollapse) {
-            header.classList.add('nav-collapsed');
-            headerNav.style.display = 'none';
-            if (logoutForm) {
-                logoutForm.style.display = 'none';
-            }
-            menuToggle.style.display = 'flex';
-        } else {
-            header.classList.remove('nav-collapsed');
-            headerNav.style.display = 'flex';
-            if (logoutForm) {
-                logoutForm.style.display = 'inline';
-            }
-            menuToggle.style.display = 'none';
+        if (effectiveWidth > availableWidth) {
+            applyCollapsedState();
         }
     }
 

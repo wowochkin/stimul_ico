@@ -66,6 +66,11 @@ a:hover {
     gap: 12px;
     margin-left: auto;
     flex: 0 1 auto;
+    min-width: 0;
+}
+
+.header.nav-collapsed .header-content {
+    min-width: auto;
 }
 
 /* Состояние инициализации */
