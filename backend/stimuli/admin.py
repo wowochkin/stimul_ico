@@ -50,7 +50,7 @@ class StimulusRequestAdmin(admin.ModelAdmin):
         'employee',
         'campaign',
         'amount',
-        'status',
+        'status_display',
         'requested_by',
         'created_at',
         'archived_at',
@@ -59,6 +59,10 @@ class StimulusRequestAdmin(admin.ModelAdmin):
     search_fields = ('employee__full_name', 'requested_by__username', 'campaign__name')
     autocomplete_fields = ('employee', 'requested_by', 'campaign')
     readonly_fields = ('created_at', 'updated_at', 'archived_at')
+
+    @admin.display(description='Статус')
+    def status_display(self, obj):
+        return obj.get_display_status()
 
 
 @admin.register(UserDivision)
