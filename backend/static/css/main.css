@@ -88,6 +88,18 @@ a:hover {
     box-sizing: border-box;
 }
 
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 12px;
+    }
+}
+
 .content-card .filter-wrapper {
     margin-bottom: 12px;
 }
@@ -661,10 +673,6 @@ a:hover {
 
 /* Планшеты */
 @media (max-width: 1024px) {
-    .container {
-        padding: clamp(20px, 3vw, 36px);
-    }
-
     .header {
         padding: 14px 20px;
     }
@@ -691,10 +699,6 @@ a:hover {
 
 /* Мобильные устройства */
 @media (max-width: 768px) {
-    .container {
-        padding: clamp(16px, 4vw, 24px);
-    }
-
     .header {
         padding: 12px 16px;
     }
@@ -782,10 +786,6 @@ a:hover {
 
 /* Маленькие мобильные устройства */
 @media (max-width: 480px) {
-    .container {
-        padding: 12px;
-    }
-
     .header-left strong {
         font-size: 0.85rem;
     }
