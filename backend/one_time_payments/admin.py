@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib import messages
+from django.db import transaction
 
 from .models import OneTimePayment, RequestCampaign
 
@@ -23,6 +25,53 @@ class RequestCampaignAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     readonly_fields = ('created_at', 'updated_at', 'closed_at', 'archived_at')
     inlines = [StimulusRequestInline]
+    actions = ['delete_with_requests']
+
+    @admin.action(description='Удалить кампанию и связанные заявки')
+    def delete_with_requests(self, request, queryset):
+        """Удаляет выбранные кампании вместе со всеми связанными заявками"""
+        from stimuli.models import StimulusRequest
+        
+        deleted_campaigns = 0
+        deleted_requests = 0
+        
+        for campaign in queryset:
+            # Удаляем все связанные заявки
+            requests = StimulusRequest.objects.filter(campaign=campaign)
+            count = requests.count()
+            requests.delete()
+            deleted_requests += count
+            
+            # Удаляем саму кампанию
+            campaign.delete()
+            deleted_campaigns += 1
+        
+        self.message_user(
+            request,
+            f'Успешно удалено кампаний: {deleted_campaigns}, заявок: {deleted_requests}',
+            messages.SUCCESS
+        )
+    
+    delete_with_requests.short_description = 'Удалить кампанию и связанные заявки'
+
+    def delete_model(self, request, obj):
+        """Переопределяем стандартное удаление, чтобы удалять и связанные заявки"""
+        from stimuli.models import StimulusRequest
+        
+        with transaction.atomic():
+            # Удаляем все связанные заявки
+            requests = StimulusRequest.objects.filter(campaign=obj)
+            count = requests.count()
+            requests.delete()
+            
+            # Удаляем саму кампанию
+            obj.delete()
+            
+            self.message_user(
+                request,
+                f'Кампания "{obj.name}" и {count} связанных заявок успешно удалены.',
+                messages.SUCCESS
+            )
 
 
 @admin.register(OneTimePayment)
