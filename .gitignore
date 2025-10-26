@@ -59,3 +59,5 @@ docker_data/
 *.tmp
 *.temp
 
+backend/one_time_payments/__pycache__/admin.cpython-311.pyc
+backend/stimuli/__pycache__/admin.cpython-311.pyc
