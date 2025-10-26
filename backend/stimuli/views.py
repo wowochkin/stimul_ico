@@ -202,7 +202,11 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         
         # Определяем базовый queryset в зависимости от прав пользователя
         if can_view_all_requests(user):
-            base_qs = qs
+            # Если пользователь с can_view_all, но не администратор, показываем только его заявки на рассмотрении
+            if not user.is_staff:
+                base_qs = qs.filter(requested_by=user, status=StimulusRequest.Status.PENDING)
+            else:
+                base_qs = qs
         elif is_department_manager(user):
             user_division = get_user_division(user)
             if user_division:

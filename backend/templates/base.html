@@ -15,7 +15,7 @@
             <span></span>
             <span></span>
         </button>
-        <a href="{% url 'dashboard:overview' %}" class="logo-link">ИЦО МГПУ · Стимулирующие выплаты</a>
+        <a href="{% if user.is_authenticated %}{% url 'request-list' %}{% else %}{% url 'login' %}{% endif %}" class="logo-link">ИЦО МГПУ · Стимулирующие выплаты</a>
     </div>
     <div class="header-content">
         <nav class="header-nav">
