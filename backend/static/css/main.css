@@ -68,6 +68,13 @@ a:hover {
     flex: 0 1 auto;
 }
 
+/* Состояние инициализации */
+.header.nav-initializing .header-nav,
+.header.nav-initializing .header-content .logout-form,
+.header.nav-initializing .menu-toggle {
+    visibility: hidden;
+}
+
 .header-content .logout-form {
     margin-left: 16px;
 }

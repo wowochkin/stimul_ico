@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        header.classList.remove('nav-collapsed');
         headerNav.style.display = 'flex';
         if (logoutForm) {
             logoutForm.style.display = 'inline';
@@ -40,6 +39,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 logoutForm.style.display = 'none';
             }
             menuToggle.style.display = 'flex';
+        } else {
+            header.classList.remove('nav-collapsed');
+            headerNav.style.display = 'flex';
+            if (logoutForm) {
+                logoutForm.style.display = 'inline';
+            }
+            menuToggle.style.display = 'none';
         }
     }
 
@@ -50,7 +56,14 @@ document.addEventListener('DOMContentLoaded', function() {
         pendingRaf = requestAnimationFrame(() => {
             pendingRaf = null;
             measureNavFit();
+            if (header) {
+                header.classList.remove('nav-initializing');
+            }
         });
+    }
+
+    if (header) {
+        header.classList.add('nav-initializing');
     }
 
     if (menuToggle) {
