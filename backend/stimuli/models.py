@@ -181,7 +181,15 @@ class UserDivision(models.Model):
         'staffing.Division',
         on_delete=models.CASCADE,
         related_name='managers',
-        verbose_name='Подразделение'
+        verbose_name='Подразделение',
+        null=True,
+        blank=True,
+        help_text='Оставьте пустым для доступа ко всем сотрудникам'
+    )
+    can_view_all = models.BooleanField(
+        'Доступ ко всем сотрудникам',
+        default=False,
+        help_text='Если включено, пользователь видит всех сотрудников независимо от подразделения'
     )
 
     class Meta:
@@ -189,4 +197,8 @@ class UserDivision(models.Model):
         verbose_name_plural = 'Подразделения пользователей'
 
     def __str__(self):
-        return f"{self.user.username} — {self.division.name}"
+        if self.can_view_all:
+            return f"{self.user.username} — Все сотрудники"
+        if self.division:
+            return f"{self.user.username} — {self.division.name}"
+        return f"{self.user.username} — без подразделения"

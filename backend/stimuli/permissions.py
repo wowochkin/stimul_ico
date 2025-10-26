@@ -14,7 +14,11 @@ def is_employee(user):
 def get_user_division(user):
     """Возвращает подразделение пользователя, если он руководитель департамента"""
     try:
-        return user.user_division.division
+        user_division_obj = user.user_division
+        # Если установлен флаг "доступ ко всем сотрудникам", возвращаем None (все сотрудники)
+        if user_division_obj.can_view_all:
+            return None
+        return user_division_obj.division
     except UserDivision.DoesNotExist:
         return None
 
@@ -74,11 +78,19 @@ def get_accessible_employees(user):
     if user.is_staff:
         return Employee.objects.all()
     
-    # Руководители департамента видят сотрудников своего подразделения
+    # Руководители департамента видят сотрудников своего подразделения или всех, если есть право can_view_all
     if is_department_manager(user):
-        user_division = get_user_division(user)
-        if user_division:
-            return Employee.objects.filter(division=user_division)
+        try:
+            user_division_obj = user.user_division
+            # Если установлен флаг "доступ ко всем сотрудникам"
+            if user_division_obj.can_view_all:
+                return Employee.objects.all()
+            # Иначе видит только сотрудников своего подразделения
+            user_division = user_division_obj.division
+            if user_division:
+                return Employee.objects.filter(division=user_division)
+        except UserDivision.DoesNotExist:
+            pass
         return Employee.objects.none()
     
     # Сотрудники видят только себя
