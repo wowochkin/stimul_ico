@@ -29,10 +29,9 @@ a:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: nowrap; /* запрещаем перенос на новую строку */
+    flex-wrap: wrap; /* разрешаем перенос на новую строку */
     position: relative;
     z-index: 1000;
-    overflow: hidden; /* скрываем переполнение */
 }
 
 .header-left {
@@ -46,12 +45,11 @@ a:hover {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    min-width: 200px; /* минимум места для заголовка */
 }
 
 .header-nav {
     display: flex;
-    flex-wrap: nowrap; /* запрещаем перенос на новую строку */
+    flex-wrap: nowrap; /* НЕ переносим элементы навигации внутри */
     align-items: center;
     gap: 8px;
     min-width: 0;

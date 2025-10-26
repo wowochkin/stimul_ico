@@ -15,19 +15,24 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!header || !headerLeft) return;
         
-        // Временно показываем навигацию для измерения
-        headerNav.style.display = 'flex';
+        // Сначала смотрим естественный размер header без навигации
+        headerNav.style.display = 'none';
+        const headerHeightWithoutNav = header.getBoundingClientRect().height;
         
-        // Проверяем, выходит ли навигация за пределы header
+        // Теперь показываем навигацию и смотрим
+        headerNav.style.display = 'flex';
         const headerRect = header.getBoundingClientRect();
         const navRect = headerNav.getBoundingClientRect();
         const headerLeftRect = headerLeft.getBoundingClientRect();
         
-        // Вычисляем доступное пространство для навигации
-        const availableWidth = headerRect.width - headerLeftRect.width - 20; // 20px отступ
-        const navWidth = navRect.width;
+        // Проверяем, перенеслась ли навигация на новую строку
+        const isNavOnNewLine = Math.abs(navRect.top - headerLeftRect.top) > 20;
         
-        const isOverflowing = navWidth > availableWidth;
+        // Проверяем, увеличилась ли высота header после показа навигации
+        const isHeaderMultiLine = headerRect.height > headerHeightWithoutNav + 20;
+        
+        // Проверяем, выходит ли за пределы
+        const isOverflowing = isHeaderMultiLine || isNavOnNewLine;
         
         // Если не умещается - скрываем навигацию и показываем кнопку
         if (isOverflowing) {
@@ -41,6 +46,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // При загрузке скрываем всё для предотвращения мигания
+    if (menuToggle) {
+        menuToggle.style.display = 'none';
+    }
+    if (headerNav) {
+        headerNav.style.display = 'none';
+    }
+    
     // Первичная проверка с небольшой задержкой
     setTimeout(checkNavFit, 100);
 
