@@ -40,24 +40,18 @@ a:hover {
     gap: 12px;
 }
 
-.header nav {
+.header-nav {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
 }
 
-.header nav a {
+.header-nav a {
     color: #fff;
     margin-left: 16px;
     font-weight: 500;
     white-space: nowrap;
-}
-
-.header-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
 }
 
 .logout-form {
@@ -623,12 +617,12 @@ a:hover {
         padding: 14px 20px;
     }
 
-    .header nav {
+    .header-nav {
         flex-wrap: wrap;
         gap: 8px;
     }
 
-    .header nav a,
+    .header-nav a,
     .header .logout-form {
         margin-left: 12px;
     }
@@ -665,8 +659,17 @@ a:hover {
         display: flex;
     }
 
+    /* Скрытие навигации на мобильных */
     .header-nav {
-        display: none;
+        display: none !important;
+    }
+
+    .header .logout-form {
+        display: none !important;
+    }
+
+    header nav {
+        display: none !important;
     }
 
     .card {
