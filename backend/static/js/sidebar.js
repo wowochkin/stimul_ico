@@ -93,7 +93,17 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(checkNavFit, 100);
 
     let resizeTimeout;
+    let lastWidth = window.innerWidth;
+    
     window.addEventListener('resize', function() {
+        const currentWidth = window.innerWidth;
+        
+        // Проверяем только реальное изменение ширины, игнорируем скролл
+        if (Math.abs(currentWidth - lastWidth) < 5) {
+            return;
+        }
+        
+        lastWidth = currentWidth;
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(checkNavFit, 150);
     });
