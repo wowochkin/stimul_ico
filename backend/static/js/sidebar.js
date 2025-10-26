@@ -45,23 +45,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Проверяем, увеличилась ли высота header (перенос на новую строку)
                 const shouldCollapse = headerRect.height > headerHeightWithoutNav + 15;
                 
-                // Обновляем состояние только если оно изменилось
-                if (shouldCollapse !== isCollapsed) {
-                    isCollapsed = shouldCollapse;
-                    
-                    if (shouldCollapse) {
-                        headerNav.style.display = 'none';
-                        menuToggle.style.display = 'flex';
-                        header.classList.add('nav-collapsed');
-                    } else {
-                        headerNav.style.display = 'flex';
-                        menuToggle.style.display = 'none';
-                        header.classList.remove('nav-collapsed');
-                    }
+                // Всегда обновляем состояние на основе реальной проверки
+                isCollapsed = shouldCollapse;
+                
+                if (shouldCollapse) {
+                    headerNav.style.display = 'none';
+                    menuToggle.style.display = 'flex';
+                    header.classList.add('nav-collapsed');
                 } else {
-                    // Возвращаем предыдущее состояние
-                    headerNav.style.display = currentNavDisplay;
-                    menuToggle.style.display = currentToggleDisplay;
+                    headerNav.style.display = 'flex';
+                    menuToggle.style.display = 'none';
+                    header.classList.remove('nav-collapsed');
                 }
                 
                 isChecking = false;
@@ -69,12 +63,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // При загрузке скрываем всё для предотвращения мигания
+    // Первичная инициализация: предполагаем что навигация видна по умолчанию
     if (menuToggle) {
         menuToggle.style.display = 'none';
     }
     if (headerNav) {
-        headerNav.style.display = 'none';
+        headerNav.style.display = 'flex';
     }
     
     // Первичная проверка с небольшой задержкой

@@ -4,6 +4,10 @@
     --bg: #f7f9fc;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
     font-size: 16px;
@@ -11,6 +15,7 @@ body {
     background-color: var(--bg);
     margin: 0;
     transition: margin 0.3s ease;
+    overflow-x: hidden;
 }
 
 a {
@@ -86,18 +91,6 @@ a:hover {
     margin: 0 auto;
     padding: clamp(24px, 4vw, 48px);
     box-sizing: border-box;
-}
-
-@media (max-width: 768px) {
-    .container {
-        padding: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .container {
-        padding: 12px;
-    }
 }
 
 .content-card .filter-wrapper {
@@ -205,6 +198,7 @@ a:hover {
     box-shadow: 0 8px 24px rgba(37, 71, 94, 0.08);
     padding: 24px;
     margin-bottom: 24px;
+    overflow: hidden;
 }
 
 .content-card {
@@ -699,6 +693,10 @@ a:hover {
 
 /* Мобильные устройства */
 @media (max-width: 768px) {
+    .container {
+        padding: 16px !important;
+    }
+
     .header {
         padding: 12px 16px;
     }
@@ -786,6 +784,10 @@ a:hover {
 
 /* Маленькие мобильные устройства */
 @media (max-width: 480px) {
+    .container {
+        padding: 12px !important;
+    }
+
     .header-left strong {
         font-size: 0.85rem;
     }
