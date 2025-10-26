@@ -2,9 +2,13 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db.models import Prefetch
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views import View, generic
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
 
 from stimuli.models import StimulusRequest
 from stimuli.forms import StimulusRequestStatusForm
@@ -71,7 +75,9 @@ class RequestCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, gen
         return RequestCampaign.objects.prefetch_related(
             Prefetch(
                 'stimulus_requests',
-                queryset=StimulusRequest.objects.select_related('employee', 'requested_by').order_by('-created_at'),
+                queryset=StimulusRequest.objects.select_related(
+                    'employee', 'employee__division', 'employee__position', 'requested_by'
+                ).order_by('-created_at'),
             ),
             Prefetch(
                 'manual_payments',
@@ -83,8 +89,12 @@ class RequestCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, gen
         context = super().get_context_data(**kwargs)
         campaign = self.object
         context['status_form'] = RequestCampaignStatusForm()
-        context['manual_payment_form'] = OneTimePaymentForm(initial={'campaign': campaign})
         context['stimulus_status_form'] = StimulusRequestStatusForm()
+        # Добавляем одобренные заявки для отображения в разделе "Разовые выплаты"
+        context['approved_requests'] = StimulusRequest.objects.filter(
+            campaign=campaign,
+            status=StimulusRequest.Status.APPROVED
+        ).select_related('employee', 'requested_by')
         return context
 
 
@@ -106,6 +116,9 @@ class RequestCampaignStatusUpdateView(LoginRequiredMixin, PermissionRequiredMixi
             elif action == 'close':
                 campaign.close(archive=False)
                 messages.success(request, 'Кампания закрыта.')
+            elif action == 'reopen':
+                campaign.reopen()
+                messages.success(request, 'Кампания переоткрыта.')
             elif action == 'archive':
                 campaign.archive()
                 messages.success(request, 'Кампания архивирована.')
@@ -229,3 +242,80 @@ class ManualPaymentDeleteView(LoginRequiredMixin, PermissionRequiredMixin, gener
         if self.object.campaign_id:
             return reverse('one_time_payments:campaign-detail', args=[self.object.campaign_id])
         return reverse('one_time_payments:manual-payment-list')
+
+
+class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    """Экспорт одобренных заявок кампании в Excel"""
+    permission_required = 'one_time_payments.view_requestcampaign'
+
+    def get(self, request, *args, **kwargs):
+        campaign = get_object_or_404(
+            RequestCampaign,
+            pk=kwargs['pk']
+        )
+        
+        # Получаем одобренные заявки кампании
+        approved_requests = StimulusRequest.objects.filter(
+            campaign=campaign,
+            status=StimulusRequest.Status.APPROVED
+        ).select_related('employee', 'requested_by', 'employee__division', 'employee__position').order_by('employee__full_name')
+        
+        # Создаем Excel файл
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = 'Одобренные заявки'
+        
+        # Заголовки
+        headers = [
+            'ФИО сотрудника',
+            'Подразделение',
+            'Должность',
+            'Размер выплаты',
+            'Обоснование',
+            'Ответственный',
+            'Комментарий',
+            'Дата создания'
+        ]
+        sheet.append(headers)
+        
+        # Стили для заголовков
+        from openpyxl.styles import Font, PatternFill
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        
+        for cell in sheet[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+        
+        # Данные
+        for request in approved_requests:
+            sheet.append([
+                request.employee.full_name,
+                request.employee.division.name if request.employee.division else '',
+                request.employee.position.name if request.employee.position else '',
+                float(request.amount),
+                request.justification,
+                request.requested_by.get_full_name() if hasattr(request.requested_by, 'get_full_name') else request.requested_by.username,
+                request.admin_comment or '',
+                request.created_at.strftime('%d.%m.%Y %H:%M')
+            ])
+        
+        # Автоматическая ширина столбцов
+        for idx, column in enumerate(sheet.columns, start=1):
+            max_length = max(
+                len(str(cell.value)) if cell.value is not None else 0 
+                for cell in column
+            )
+            adjusted_width = max(10, min(max_length + 2, 50))
+            sheet.column_dimensions[get_column_letter(idx)].width = adjusted_width
+        
+        # Сохраняем файл в ответ
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        timestamp = timezone.now().strftime('%Y%m%d_%H%M')
+        campaign_name_clean = "".join(c for c in campaign.name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        response['Content-Disposition'] = f'attachment; filename="campaign_{campaign_name_clean}_{timestamp}.xlsx"'
+        
+        workbook.save(response)
+        return response

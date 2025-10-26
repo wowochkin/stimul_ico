@@ -27,10 +27,9 @@
                 <label for="action">Действие</label>
                 <select name="action" id="action">
                     {% for value, label in status_form.fields.action.choices %}
-                        <option value="{{ value }}">{{ label }}</option>
+                        <option value="{{ value }}" {% if campaign.status == 'draft' and value == 'open' %}selected{% elif campaign.status == 'open' and value == 'close' %}selected{% elif campaign.status == 'closed' and value == 'reopen' %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
-                <textarea name="comment" rows="2" placeholder="Комментарий (необязательно)"></textarea>
                 <button type="submit" class="btn btn-primary">Применить</button>
             </form>
         </section>
@@ -90,67 +89,39 @@
     </section>
     <section style="margin-bottom:32px;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-            <h3>Разовые выплаты</h3>
-            <a href="{% url 'one_time_payments:manual-payment-list' %}?campaign={{ campaign.pk }}" class="btn btn-text">Все разовые выплаты</a>
+            <h3>Одобренные заявки (Разовые выплаты)</h3>
+            <a href="{% url 'one_time_payments:campaign-approved-export' campaign.pk %}" class="btn btn-text">Выгрузить в Excel</a>
         </div>
         <div class="table-wrapper" style="margin-top:12px;">
             <table class="table">
                 <thead>
                     <tr>
+                        <th>Создано</th>
                         <th>Сотрудник</th>
                         <th>Сумма</th>
-                        <th>Дата</th>
-                        <th>Основание</th>
-                        <th>Создал</th>
-                        <th>Действия</th>
+                        <th>Обоснование</th>
+                        <th>Ответственный</th>
+                        <th>Комментарий</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for payment in campaign.manual_payments.all %}
+                    {% for request in approved_requests %}
                         <tr>
-                            <td>{{ payment.employee.full_name }}</td>
-                            <td>{{ payment.amount }}</td>
-                            <td>{{ payment.payment_date|date:'d.m.Y' }}</td>
-                            <td>{{ payment.justification|default:'—' }}</td>
-                            <td>{{ payment.created_by.get_full_name|default:payment.created_by.username }}</td>
-                            <td style="display:flex; gap:8px; flex-wrap:wrap;">
-                                <a href="{% url 'one_time_payments:manual-payment-edit' payment.pk %}" class="btn btn-text">Изменить</a>
-                                <a href="{% url 'one_time_payments:manual-payment-delete' payment.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
-                            </td>
+                            <td>{{ request.created_at|date:'d.m.Y H:i' }}</td>
+                            <td>{{ request.employee.full_name }}</td>
+                            <td>{{ request.amount }}</td>
+                            <td>{{ request.justification }}</td>
+                            <td>{{ request.requested_by.get_full_name|default:request.requested_by.username }}</td>
+                            <td>{{ request.admin_comment|default:'—' }}</td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6">Разовые выплаты отсутствуют.</td>
+                            <td colspan="6">Одобренных заявок нет.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </section>
-    {% if perms.one_time_payments.add_onetimepayment %}
-        <section style="margin-bottom:16px;">
-            <h3>Добавить разовую выплату</h3>
-            <form method="post" action="{% url 'one_time_payments:campaign-manual-payment-add' campaign.pk %}">
-                {% csrf_token %}
-                <div class="form-grid">
-                    {% for field in manual_payment_form %}
-                        <div>
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            {% if field.name == 'campaign' %}
-                                <input type="hidden" name="campaign" value="{{ campaign.pk }}">
-                                <p>Кампания: {{ campaign.name }}</p>
-                            {% else %}
-                                {{ field }}
-                            {% endif %}
-                            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
-                    <button type="submit" class="btn btn-primary">Создать выплату</button>
-                </div>
-            </form>
-        </section>
-    {% endif %}
 </div>
 {% endblock %}

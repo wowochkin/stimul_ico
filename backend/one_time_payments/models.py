@@ -89,6 +89,14 @@ class RequestCampaign(models.Model):
             if archive:
                 self.archive()
 
+    def reopen(self) -> None:
+        """Переоткрывает закрытую кампанию"""
+        if self.status != self.Status.CLOSED:
+            raise ValidationError('Переоткрыть можно только закрытую кампанию.')
+        self.status = self.Status.OPEN
+        self.closed_at = None
+        self.save(update_fields=['status', 'closed_at'])
+
     def archive(self) -> None:
         if self.status not in (self.Status.CLOSED, self.Status.ARCHIVED):
             raise ValidationError('В архив можно отправить только закрытую кампанию.')

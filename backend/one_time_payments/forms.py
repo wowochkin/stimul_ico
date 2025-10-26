@@ -28,10 +28,10 @@ class RequestCampaignStatusForm(forms.Form):
         choices=[
             ('open', 'Открыть'),
             ('close', 'Закрыть'),
+            ('reopen', 'Переоткрыть'),
             ('archive', 'Переместить в архив'),
         ]
     )
-    comment = forms.CharField(label='Комментарий', required=False, widget=forms.Textarea(attrs={'rows': 2}))
 
 
 class OneTimePaymentForm(forms.ModelForm):
