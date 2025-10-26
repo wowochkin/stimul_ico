@@ -2,8 +2,8 @@ from .models import UserDivision
 
 
 def is_department_manager(user):
-    """Проверяет, является ли пользователь руководителем департамента"""
-    return user.groups.filter(name='Руководитель департамента').exists()
+    """Проверяет, является ли пользователь руководителем департамента или руководством института"""
+    return user.groups.filter(name__in=['Руководитель департамента', 'Руководство института']).exists()
 
 
 def is_employee(user):
