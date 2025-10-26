@@ -1,6 +1,6 @@
 (function () {
     const TOKEN_STORAGE_KEY = 'stimuliAuthToken';
-    const API_BASE_URL = (window.STIMUL_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+    const API_BASE_URL = (window.STIMUL_API_BASE_URL || window.location.origin).replace(/\/$/, '');
 
     const state = {
         token: localStorage.getItem(TOKEN_STORAGE_KEY) || '',

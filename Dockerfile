@@ -23,6 +23,7 @@ RUN chmod +x /app/entrypoint.sh
 
 COPY test_app.py /app/test_app.py
 
-EXPOSE 8080
+# Railway will provide PORT via environment variable
+EXPOSE $PORT
 
 CMD ["/app/entrypoint.sh"]

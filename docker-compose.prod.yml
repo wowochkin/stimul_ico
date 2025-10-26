@@ -16,6 +16,7 @@ services:
     environment:
       - DJANGO_DEBUG=0
       - DJANGO_ALLOWED_HOSTS=your-domain.com
+      - PORT=8000
     restart: unless-stopped
 
 volumes:

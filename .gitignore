@@ -1,12 +1,59 @@
-<<<<<<< HEAD
-backend/stimuli/__pycache__/forms.cpython-311.pyc
-backend/stimuli/__pycache__/permissions.cpython-311.pyc
-backend/api/__pycache__/views.cpython-311.pyc
-backend/stimuli/__pycache__/filters.cpython-311.pyc
-backend/stimuli/__pycache__/forms.cpython-311.pyc
-backend/stimuli/__pycache__/permissions.cpython-311.pyc
-backend/stimuli/__pycache__/views.cpython-311.pyc
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
 .venv/
-=======
-backend/stimul_ico/__pycache__/urls.cpython-311.pyc
-backend/stimul_ico/__pycache__/settings.cpython-311.pyc
+venv/
+env/
+ENV/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+db.sqlite3-wal
+db.sqlite3-shm
+
+# Static files
+backend/staticfiles/
+staticfiles/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker_data/
+.docker/
+
+# Temporary files
+*.tmp
+*.temp

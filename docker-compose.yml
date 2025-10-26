@@ -15,5 +15,6 @@ services:
       - ./docker_data/staticfiles:/app/staticfiles
     environment:
       - DJANGO_DEBUG=1
+      - PORT=8000
     restart: unless-stopped
 

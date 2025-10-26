@@ -25,14 +25,14 @@ collectstatic:
 	$(PY) backend/manage.py collectstatic --noinput
 
 docker-build:
-	docker build -t stimul-ico:latest /Users/vladimirabramov/Stimul_ICO
+	docker build -t stimul-ico:latest .
 
 docker-up:
 	docker run --rm --name stimul-ico \
 		-p 8000:8000 \
 		--env-file .env \
-		-v /Users/vladimirabramov/Stimul_ICO/docker_data/db.sqlite3:/app/backend/db.sqlite3 \
-		-v /Users/vladimirabramov/Stimul_ICO/docker_data/staticfiles:/app/staticfiles \
+		-v $(PWD)/docker_data/db.sqlite3:/app/backend/db.sqlite3 \
+		-v $(PWD)/docker_data/staticfiles:/app/staticfiles \
 		stimul-ico:latest
 
 docker-down:

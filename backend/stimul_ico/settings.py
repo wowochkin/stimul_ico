@@ -13,22 +13,11 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'insecure-development-key')
 
 DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
 
-# Railway automatically sets RAILWAY_PUBLIC_DOMAIN
-RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
-if RAILWAY_PUBLIC_DOMAIN:
-    ALLOWED_HOSTS = [
-        RAILWAY_PUBLIC_DOMAIN, 
-        'localhost', 
-        '127.0.0.1', 
-        '0.0.0.0',
-        'healthcheck.railway.app',  # Railway healthcheck hostname
-        '.railway.app',  # Все поддомены Railway
-        '.up.railway.app',  # Новые домены Railway
-    ]
-else:
-    ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split() or ['*']
+# Railway configuration
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split() or ['*']
 
 # CSRF trusted origins для Railway
+RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
 if RAILWAY_PUBLIC_DOMAIN:
     CSRF_TRUSTED_ORIGINS = [
         f'https://{RAILWAY_PUBLIC_DOMAIN}',
