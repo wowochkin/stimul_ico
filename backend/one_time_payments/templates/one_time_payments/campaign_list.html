@@ -6,9 +6,14 @@
 <div class="card content-card">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; flex-wrap:wrap;">
         <h2>Кампании заявок</h2>
-        {% if perms.one_time_payments.add_requestcampaign %}
-            <a href="{% url 'one_time_payments:campaign-add' %}" class="btn btn-primary">Новая кампания</a>
-        {% endif %}
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            {% if perms.stimuli.view_stimulusrequest %}
+                <a href="{% url 'request-list' %}" class="btn btn-text">Все заявки</a>
+            {% endif %}
+            {% if perms.one_time_payments.add_requestcampaign %}
+                <a href="{% url 'one_time_payments:campaign-add' %}" class="btn btn-primary">Новая кампания</a>
+            {% endif %}
+        </div>
     </div>
     <form method="get" class="filter-form" style="margin-bottom:16px; max-width:320px;">
         <label for="status">Статус</label>

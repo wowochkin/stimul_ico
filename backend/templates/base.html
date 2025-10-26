@@ -31,9 +31,6 @@
                 {% endif %}
                 {% if perms.one_time_payments.view_requestcampaign %}
                     <a href="{% url 'one_time_payments:campaign-list' %}">Заявки и разовые выплаты</a>
-                    {% if perms.stimuli.view_stimulusrequest %}
-                        <a href="{% url 'request-list' %}">Все заявки</a>
-                    {% endif %}
                 {% else %}
                     <a href="{% url 'request-list' %}">Заявки</a>
                 {% endif %}
@@ -73,9 +70,6 @@
             {% endif %}
             {% if perms.one_time_payments.view_requestcampaign %}
                 <a href="{% url 'one_time_payments:campaign-list' %}">Заявки и разовые выплаты</a>
-                {% if perms.stimuli.view_stimulusrequest %}
-                    <a href="{% url 'request-list' %}">Все заявки</a>
-                {% endif %}
             {% else %}
                 <a href="{% url 'request-list' %}">Заявки</a>
             {% endif %}
