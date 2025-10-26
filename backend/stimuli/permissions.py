@@ -68,7 +68,13 @@ def can_edit_request(user, request_obj):
     if user.is_staff:
         return True
     
-    # Руководители департамента НЕ могут редактировать заявки
+    # Пользователи с can_view_all могут редактировать только свои заявки в статусе "На рассмотрении"
+    try:
+        if user.user_division.can_view_all and request_obj.requested_by == user:
+            return request_obj.status == request_obj.Status.PENDING
+    except UserDivision.DoesNotExist:
+        pass
+    
     # Сотрудники могут редактировать только свои заявки в статусе "На рассмотрении"
     if is_employee(user) and request_obj.requested_by == user:
         return request_obj.status == request_obj.Status.PENDING
@@ -81,6 +87,13 @@ def can_delete_request(user, request_obj):
     # Администраторы могут удалять все
     if user.is_staff:
         return True
+    
+    # Пользователи с can_view_all могут удалять только свои заявки в статусе "На рассмотрении"
+    try:
+        if user.user_division.can_view_all and request_obj.requested_by == user:
+            return request_obj.status == request_obj.Status.PENDING
+    except UserDivision.DoesNotExist:
+        pass
     
     # Руководители департамента могут удалять только свои заявки в статусе "На рассмотрении"
     if is_department_manager(user) and request_obj.requested_by == user:
