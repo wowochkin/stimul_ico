@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -57,6 +58,4 @@ docker_data/
 # Temporary files
 *.tmp
 *.temp
-backend/stimul_ico/__pycache__/settings.cpython-311.pyc
-backend/stimuli/__pycache__/models.cpython-311.pyc
 
