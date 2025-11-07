@@ -119,7 +119,8 @@ class RequestCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, gen
         grouped_requests = defaultdict(lambda: {
             'employee': None,
             'total_amount': Decimal('0'),
-            'justifications_with_amounts': [],
+            'justifications': [],
+            'amounts': [],
             'requesters': set(),
             'comments': [],
             'earliest_created_at': None,
@@ -131,9 +132,8 @@ class RequestCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, gen
             grouped_requests[employee_id]['total_amount'] += request.amount
             
             if request.justification:
-                # Добавляем обоснование вместе с суммой
-                justification_with_amount = f"{request.justification} ({request.amount} ₽)"
-                grouped_requests[employee_id]['justifications_with_amounts'].append(justification_with_amount)
+                grouped_requests[employee_id]['justifications'].append(request.justification)
+                grouped_requests[employee_id]['amounts'].append(request.amount)
             
             requester_name = request.requested_by.get_full_name() or request.requested_by.username
             grouped_requests[employee_id]['requesters'].add(requester_name)
@@ -147,10 +147,20 @@ class RequestCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, gen
         # Преобразуем в список и сортируем по ФИО сотрудника
         approved_requests_grouped = []
         for data in grouped_requests.values():
+            # Если заявок несколько, добавляем суммы к обоснованиям
+            if len(data['justifications']) > 1:
+                justifications_display = '; '.join([
+                    f"{just} ({amt} ₽)" 
+                    for just, amt in zip(data['justifications'], data['amounts'])
+                ])
+            else:
+                # Если заявка одна, показываем обоснование без суммы
+                justifications_display = data['justifications'][0] if data['justifications'] else ''
+            
             approved_requests_grouped.append({
                 'employee': data['employee'],
                 'total_amount': data['total_amount'],
-                'justification': '; '.join(data['justifications_with_amounts']),
+                'justification': justifications_display,
                 'requesters': ', '.join(sorted(data['requesters'])),
                 'admin_comment': '; '.join(data['comments']) if data['comments'] else '',
                 'created_at': data['earliest_created_at'],
@@ -331,7 +341,8 @@ class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredM
         grouped_requests = defaultdict(lambda: {
             'employee': None,
             'total_amount': Decimal('0'),
-            'justifications_with_amounts': [],
+            'justifications': [],
+            'amounts': [],
             'requesters': set(),
             'comments': [],
             'earliest_created_at': None,
@@ -343,9 +354,8 @@ class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredM
             grouped_requests[employee_id]['total_amount'] += req.amount
             
             if req.justification:
-                # Добавляем обоснование вместе с суммой
-                justification_with_amount = f"{req.justification} ({req.amount} ₽)"
-                grouped_requests[employee_id]['justifications_with_amounts'].append(justification_with_amount)
+                grouped_requests[employee_id]['justifications'].append(req.justification)
+                grouped_requests[employee_id]['amounts'].append(req.amount)
             
             requester_name = req.requested_by.get_full_name() or req.requested_by.username
             grouped_requests[employee_id]['requesters'].add(requester_name)
@@ -359,10 +369,20 @@ class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredM
         # Преобразуем в список и сортируем по ФИО сотрудника
         approved_requests_grouped = []
         for data in grouped_requests.values():
+            # Если заявок несколько, добавляем суммы к обоснованиям
+            if len(data['justifications']) > 1:
+                justifications_display = '; '.join([
+                    f"{just} ({amt} ₽)" 
+                    for just, amt in zip(data['justifications'], data['amounts'])
+                ])
+            else:
+                # Если заявка одна, показываем обоснование без суммы
+                justifications_display = data['justifications'][0] if data['justifications'] else ''
+            
             approved_requests_grouped.append({
                 'employee': data['employee'],
                 'total_amount': data['total_amount'],
-                'justification': '; '.join(data['justifications_with_amounts']),
+                'justification': justifications_display,
                 'requesters': ', '.join(sorted(data['requesters'])),
                 'admin_comment': '; '.join(data['comments']) if data['comments'] else '',
                 'created_at': data['earliest_created_at'],
