@@ -119,7 +119,7 @@ class RequestCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, gen
         grouped_requests = defaultdict(lambda: {
             'employee': None,
             'total_amount': Decimal('0'),
-            'justifications': [],
+            'justifications_with_amounts': [],
             'requesters': set(),
             'comments': [],
             'earliest_created_at': None,
@@ -131,7 +131,9 @@ class RequestCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, gen
             grouped_requests[employee_id]['total_amount'] += request.amount
             
             if request.justification:
-                grouped_requests[employee_id]['justifications'].append(request.justification)
+                # Добавляем обоснование вместе с суммой
+                justification_with_amount = f"{request.justification} ({request.amount} ₽)"
+                grouped_requests[employee_id]['justifications_with_amounts'].append(justification_with_amount)
             
             requester_name = request.requested_by.get_full_name() or request.requested_by.username
             grouped_requests[employee_id]['requesters'].add(requester_name)
@@ -148,7 +150,7 @@ class RequestCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, gen
             approved_requests_grouped.append({
                 'employee': data['employee'],
                 'total_amount': data['total_amount'],
-                'justification': '; '.join(data['justifications']),
+                'justification': '; '.join(data['justifications_with_amounts']),
                 'requesters': ', '.join(sorted(data['requesters'])),
                 'admin_comment': '; '.join(data['comments']) if data['comments'] else '',
                 'created_at': data['earliest_created_at'],
@@ -329,7 +331,7 @@ class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredM
         grouped_requests = defaultdict(lambda: {
             'employee': None,
             'total_amount': Decimal('0'),
-            'justifications': [],
+            'justifications_with_amounts': [],
             'requesters': set(),
             'comments': [],
             'earliest_created_at': None,
@@ -341,7 +343,9 @@ class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredM
             grouped_requests[employee_id]['total_amount'] += req.amount
             
             if req.justification:
-                grouped_requests[employee_id]['justifications'].append(req.justification)
+                # Добавляем обоснование вместе с суммой
+                justification_with_amount = f"{req.justification} ({req.amount} ₽)"
+                grouped_requests[employee_id]['justifications_with_amounts'].append(justification_with_amount)
             
             requester_name = req.requested_by.get_full_name() or req.requested_by.username
             grouped_requests[employee_id]['requesters'].add(requester_name)
@@ -358,7 +362,7 @@ class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredM
             approved_requests_grouped.append({
                 'employee': data['employee'],
                 'total_amount': data['total_amount'],
-                'justification': '; '.join(data['justifications']),
+                'justification': '; '.join(data['justifications_with_amounts']),
                 'requesters': ', '.join(sorted(data['requesters'])),
                 'admin_comment': '; '.join(data['comments']) if data['comments'] else '',
                 'created_at': data['earliest_created_at'],
