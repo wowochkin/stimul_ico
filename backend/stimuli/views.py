@@ -19,7 +19,7 @@ from .filters import EmployeeFilter, StimulusRequestFilter
 from .forms import EmployeeForm, InternalAssignmentFormSet, StimulusRequestForm, StimulusRequestStatusForm, EmployeeExcelUploadForm
 from .permissions import (
     is_department_manager, is_employee, get_user_division,
-    can_view_all_requests, can_edit_request, can_delete_request, can_change_request_status, get_accessible_employees
+    can_view_all_requests, can_view_own_requests, can_edit_request, can_delete_request, can_change_request_status, get_accessible_employees
 )
 from one_time_payments.models import RequestCampaign
 from staffing.models import Division, Position
@@ -208,6 +208,13 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
             else:
                 # Пользователи с can_view_all (но не администраторы и не руководство института) видят только свои заявки
                 base_qs = qs.filter(requested_by=user)
+        elif can_view_own_requests(user):
+            # Пользователи с can_view_own_requests видят заявки на самого себя
+            try:
+                employee = user.employee_profile
+                base_qs = qs.filter(employee=employee)
+            except Employee.DoesNotExist:
+                base_qs = qs.none()
         elif is_department_manager(user):
             user_division = get_user_division(user)
             if user_division:
@@ -346,6 +353,10 @@ class StimulusRequestUpdateView(LoginRequiredMixin, generic.UpdateView):
     def get_queryset(self):
         base_qs = StimulusRequest.objects.select_related('employee', 'requested_by')
         user = self.request.user
+        
+        # Пользователи с can_view_own_requests НЕ могут редактировать заявки (только просмотр)
+        if can_view_own_requests(user):
+            return base_qs.none()
         
         # Администраторы могут редактировать все заявки
         if can_view_all_requests(user):
@@ -669,6 +680,10 @@ class StimulusRequestBulkCreateView(LoginRequiredMixin, PermissionRequiredMixin,
 
 def deletable_requests_queryset(user):
     base_qs = StimulusRequest.objects.select_related('employee', 'requested_by')
+    
+    # Пользователи с can_view_own_requests НЕ могут удалять заявки (только просмотр)
+    if can_view_own_requests(user):
+        return base_qs.none()
     
     # Администраторы могут удалять все заявки
     if can_view_all_requests(user):

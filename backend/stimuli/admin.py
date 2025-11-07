@@ -67,8 +67,8 @@ class StimulusRequestAdmin(admin.ModelAdmin):
 
 @admin.register(UserDivision)
 class UserDivisionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'division', 'can_view_all')
+    list_display = ('user', 'division', 'can_view_all', 'can_view_own_requests')
     search_fields = ('user__username', 'user__first_name', 'user__last_name', 'division__name')
     autocomplete_fields = ('user', 'division')
-    list_editable = ('can_view_all',)
-    list_filter = ('can_view_all', 'division')
+    list_editable = ('can_view_all', 'can_view_own_requests')
+    list_filter = ('can_view_all', 'can_view_own_requests', 'division')

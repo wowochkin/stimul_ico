@@ -191,6 +191,11 @@ class UserDivision(models.Model):
         default=False,
         help_text='Если включено, пользователь видит всех сотрудников независимо от подразделения'
     )
+    can_view_own_requests = models.BooleanField(
+        'Может видеть заявки на себя',
+        default=False,
+        help_text='Если включено, пользователь может видеть заявки, поданные на самого себя, без возможности их редактирования'
+    )
 
     class Meta:
         verbose_name = 'Подразделение пользователя'

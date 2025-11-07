@@ -31,6 +31,14 @@ def get_user_division(user):
         return None
 
 
+def can_view_own_requests(user):
+    """Проверяет, может ли пользователь видеть заявки на самого себя"""
+    try:
+        return user.user_division.can_view_own_requests
+    except UserDivision.DoesNotExist:
+        return False
+
+
 def can_view_all_requests(user):
     """Проверяет, может ли пользователь видеть все заявки"""
     # Администраторы видят все заявки
@@ -72,6 +80,13 @@ def can_edit_request(user, request_obj):
     if user.is_staff:
         return True
     
+    # Пользователи с can_view_own_requests НЕ могут редактировать заявки (только просмотр)
+    try:
+        if user.user_division.can_view_own_requests:
+            return False
+    except UserDivision.DoesNotExist:
+        pass
+    
     # Пользователи с can_view_all могут редактировать только свои заявки в статусе "На рассмотрении"
     try:
         if user.user_division.can_view_all and request_obj.requested_by == user:
@@ -95,6 +110,13 @@ def can_delete_request(user, request_obj):
     # Администраторы могут удалять все
     if user.is_staff:
         return True
+    
+    # Пользователи с can_view_own_requests НЕ могут удалять заявки (только просмотр)
+    try:
+        if user.user_division.can_view_own_requests:
+            return False
+    except UserDivision.DoesNotExist:
+        pass
     
     # Пользователи с can_view_all могут удалять только свои заявки в статусе "На рассмотрении"
     try:
