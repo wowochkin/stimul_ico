@@ -48,6 +48,7 @@
                         <th>Создано</th>
                         <th>Сотрудник</th>
                         <th>Сумма</th>
+                        <th>Обоснование</th>
                         <th>Статус</th>
                         <th>Ответственный</th>
                         <th>Комментарий</th>
@@ -62,6 +63,7 @@
                             <td>{{ request.created_at|date:'d.m.Y H:i' }}</td>
                             <td>{{ request.employee.full_name }}</td>
                             <td>{{ request.amount }}</td>
+                            <td>{{ request.justification }}</td>
                             <td><span class="status status-{{ request.status }}">{{ request.get_display_status }}</span></td>
                             <td>{{ request.requested_by.get_full_name|default:request.requested_by.username }}</td>
                             <td>{{ request.admin_comment|default:'—' }}</td>
@@ -81,7 +83,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="7">Заявок в кампании нет.</td>
+                            <td colspan="8">Заявок в кампании нет.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
