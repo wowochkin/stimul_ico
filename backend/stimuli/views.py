@@ -6,7 +6,7 @@ from datetime import datetime
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db import transaction
-from django.db.models import BooleanField, Case, Value, When
+from django.db.models import BooleanField, Case, Value, When, Q
 from django.http import Http404, QueryDict, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
@@ -203,12 +203,17 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         # Определяем базовый queryset в зависимости от прав пользователя
         # ВАЖНО: Проверяем can_view_own_requests ПЕРВЫМ, чтобы он имел приоритет
         if can_view_own_requests(user):
-            # Пользователи с can_view_own_requests видят заявки на самого себя
+            # Пользователи с can_view_own_requests видят:
+            # 1. Заявки на самого себя (employee = user.employee_profile)
+            # 2. Заявки, которые они сами подали (requested_by = user)
             try:
                 employee = user.employee_profile
-                base_qs = qs.filter(employee=employee)
+                base_qs = qs.filter(
+                    Q(employee=employee) | Q(requested_by=user)
+                )
             except Employee.DoesNotExist:
-                base_qs = qs.none()
+                # Если нет связи с Employee, показываем только заявки, которые пользователь сам подал
+                base_qs = qs.filter(requested_by=user)
         elif can_view_all_requests(user):
             # Администраторы, руководство института и пользователи с can_view_all видят все заявки
             if user.is_staff or user.groups.filter(name='Руководство института').exists():
