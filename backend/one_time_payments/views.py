@@ -1,3 +1,6 @@
+from decimal import Decimal
+from collections import defaultdict
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
@@ -102,14 +105,58 @@ class RequestCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, gen
         context['status_form'] = RequestCampaignStatusForm()
         context['available_actions'] = available_actions
         context['stimulus_status_form'] = StimulusRequestStatusForm()
-        # Добавляем одобренные заявки для отображения в разделе "Разовые выплаты"
+        
+        # Получаем одобренные заявки для отображения в разделе "Разовые выплаты"
         # Включаем как текущие одобренные, так и одобренные до архивирования
-        context['approved_requests'] = StimulusRequest.objects.filter(
+        approved_requests = StimulusRequest.objects.filter(
             campaign=campaign
         ).filter(
             Q(status=StimulusRequest.Status.APPROVED) | 
             Q(status=StimulusRequest.Status.ARCHIVED, final_status__icontains='Одобрено')
-        ).select_related('employee', 'requested_by')
+        ).select_related('employee', 'employee__division', 'employee__position', 'requested_by')
+        
+        # Группируем заявки по сотрудникам и суммируем суммы
+        grouped_requests = defaultdict(lambda: {
+            'employee': None,
+            'total_amount': Decimal('0'),
+            'justifications': [],
+            'requesters': set(),
+            'comments': [],
+            'earliest_created_at': None,
+        })
+        
+        for request in approved_requests:
+            employee_id = request.employee.id
+            grouped_requests[employee_id]['employee'] = request.employee
+            grouped_requests[employee_id]['total_amount'] += request.amount
+            
+            if request.justification:
+                grouped_requests[employee_id]['justifications'].append(request.justification)
+            
+            requester_name = request.requested_by.get_full_name() or request.requested_by.username
+            grouped_requests[employee_id]['requesters'].add(requester_name)
+            
+            if request.admin_comment:
+                grouped_requests[employee_id]['comments'].append(request.admin_comment)
+            
+            if grouped_requests[employee_id]['earliest_created_at'] is None or request.created_at < grouped_requests[employee_id]['earliest_created_at']:
+                grouped_requests[employee_id]['earliest_created_at'] = request.created_at
+        
+        # Преобразуем в список и сортируем по ФИО сотрудника
+        approved_requests_grouped = []
+        for data in grouped_requests.values():
+            approved_requests_grouped.append({
+                'employee': data['employee'],
+                'total_amount': data['total_amount'],
+                'justification': '; '.join(data['justifications']),
+                'requesters': ', '.join(sorted(data['requesters'])),
+                'admin_comment': '; '.join(data['comments']) if data['comments'] else '',
+                'created_at': data['earliest_created_at'],
+            })
+        
+        approved_requests_grouped.sort(key=lambda x: x['employee'].full_name)
+        context['approved_requests_grouped'] = approved_requests_grouped
+        
         return context
 
 
@@ -276,7 +323,48 @@ class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredM
         ).filter(
             Q(status=StimulusRequest.Status.APPROVED) | 
             Q(status=StimulusRequest.Status.ARCHIVED, final_status__icontains='Одобрено')
-        ).select_related('employee', 'requested_by', 'employee__division', 'employee__position').order_by('employee__full_name')
+        ).select_related('employee', 'requested_by', 'employee__division', 'employee__position')
+        
+        # Группируем заявки по сотрудникам и суммируем суммы
+        grouped_requests = defaultdict(lambda: {
+            'employee': None,
+            'total_amount': Decimal('0'),
+            'justifications': [],
+            'requesters': set(),
+            'comments': [],
+            'earliest_created_at': None,
+        })
+        
+        for req in approved_requests:
+            employee_id = req.employee.id
+            grouped_requests[employee_id]['employee'] = req.employee
+            grouped_requests[employee_id]['total_amount'] += req.amount
+            
+            if req.justification:
+                grouped_requests[employee_id]['justifications'].append(req.justification)
+            
+            requester_name = req.requested_by.get_full_name() or req.requested_by.username
+            grouped_requests[employee_id]['requesters'].add(requester_name)
+            
+            if req.admin_comment:
+                grouped_requests[employee_id]['comments'].append(req.admin_comment)
+            
+            if grouped_requests[employee_id]['earliest_created_at'] is None or req.created_at < grouped_requests[employee_id]['earliest_created_at']:
+                grouped_requests[employee_id]['earliest_created_at'] = req.created_at
+        
+        # Преобразуем в список и сортируем по ФИО сотрудника
+        approved_requests_grouped = []
+        for data in grouped_requests.values():
+            approved_requests_grouped.append({
+                'employee': data['employee'],
+                'total_amount': data['total_amount'],
+                'justification': '; '.join(data['justifications']),
+                'requesters': ', '.join(sorted(data['requesters'])),
+                'admin_comment': '; '.join(data['comments']) if data['comments'] else '',
+                'created_at': data['earliest_created_at'],
+            })
+        
+        approved_requests_grouped.sort(key=lambda x: x['employee'].full_name)
         
         # Создаем Excel файл
         workbook = Workbook()
@@ -288,9 +376,9 @@ class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredM
             'ФИО сотрудника',
             'Подразделение',
             'Должность',
-            'Размер выплаты',
+            'Итоговая сумма',
             'Обоснование',
-            'Ответственный',
+            'Ответственные',
             'Комментарий',
             'Дата создания'
         ]
@@ -306,23 +394,16 @@ class CampaignApprovedRequestsExportView(LoginRequiredMixin, PermissionRequiredM
             cell.fill = header_fill
         
         # Данные
-        for request in approved_requests:
-            # Получаем имя ответственного
-            responsible_name = request.requested_by.username
-            if hasattr(request.requested_by, 'get_full_name'):
-                full_name = request.requested_by.get_full_name()
-                if full_name:
-                    responsible_name = full_name
-            
+        for item in approved_requests_grouped:
             sheet.append([
-                request.employee.full_name,
-                request.employee.division.name if request.employee.division else '',
-                request.employee.position.name if request.employee.position else '',
-                float(request.amount),
-                request.justification,
-                responsible_name,
-                request.admin_comment or '',
-                request.created_at.strftime('%d.%m.%Y %H:%M')
+                item['employee'].full_name,
+                item['employee'].division.name if item['employee'].division else '',
+                item['employee'].position.name if item['employee'].position else '',
+                float(item['total_amount']),
+                item['justification'],
+                item['requesters'],
+                item['admin_comment'] or '',
+                item['created_at'].strftime('%d.%m.%Y %H:%M')
             ])
         
         # Автоматическая ширина столбцов
