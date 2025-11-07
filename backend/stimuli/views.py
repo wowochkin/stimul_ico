@@ -201,20 +201,21 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         user = self.request.user
         
         # Определяем базовый queryset в зависимости от прав пользователя
-        if can_view_all_requests(user):
-            # Администраторы, руководство института и пользователи с can_view_all видят все заявки
-            if user.is_staff or user.groups.filter(name='Руководство института').exists():
-                base_qs = qs
-            else:
-                # Пользователи с can_view_all (но не администраторы и не руководство института) видят только свои заявки
-                base_qs = qs.filter(requested_by=user)
-        elif can_view_own_requests(user):
+        # ВАЖНО: Проверяем can_view_own_requests ПЕРВЫМ, чтобы он имел приоритет
+        if can_view_own_requests(user):
             # Пользователи с can_view_own_requests видят заявки на самого себя
             try:
                 employee = user.employee_profile
                 base_qs = qs.filter(employee=employee)
             except Employee.DoesNotExist:
                 base_qs = qs.none()
+        elif can_view_all_requests(user):
+            # Администраторы, руководство института и пользователи с can_view_all видят все заявки
+            if user.is_staff or user.groups.filter(name='Руководство института').exists():
+                base_qs = qs
+            else:
+                # Пользователи с can_view_all (но не администраторы и не руководство института) видят только свои заявки
+                base_qs = qs.filter(requested_by=user)
         elif is_department_manager(user):
             user_division = get_user_division(user)
             if user_division:
