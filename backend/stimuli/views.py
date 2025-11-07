@@ -360,9 +360,10 @@ class StimulusRequestUpdateView(LoginRequiredMixin, generic.UpdateView):
         base_qs = StimulusRequest.objects.select_related('employee', 'requested_by')
         user = self.request.user
         
-        # Пользователи с can_view_own_requests НЕ могут редактировать заявки (только просмотр)
+        # Пользователи с can_view_own_requests могут редактировать только свои заявки в статусе "На рассмотрении"
+        # (не могут редактировать заявки на себя, поданные другими)
         if can_view_own_requests(user):
-            return base_qs.none()
+            return base_qs.filter(requested_by=user, status=StimulusRequest.Status.PENDING)
         
         # Администраторы могут редактировать все заявки
         if can_view_all_requests(user):
@@ -687,9 +688,10 @@ class StimulusRequestBulkCreateView(LoginRequiredMixin, PermissionRequiredMixin,
 def deletable_requests_queryset(user):
     base_qs = StimulusRequest.objects.select_related('employee', 'requested_by')
     
-    # Пользователи с can_view_own_requests НЕ могут удалять заявки (только просмотр)
+    # Пользователи с can_view_own_requests могут удалять только свои заявки в статусе "На рассмотрении"
+    # (не могут удалять заявки на себя, поданные другими)
     if can_view_own_requests(user):
-        return base_qs.none()
+        return base_qs.filter(requested_by=user, status=StimulusRequest.Status.PENDING)
     
     # Администраторы могут удалять все заявки
     if can_view_all_requests(user):

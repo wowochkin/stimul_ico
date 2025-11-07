@@ -80,9 +80,12 @@ def can_edit_request(user, request_obj):
     if user.is_staff:
         return True
     
-    # Пользователи с can_view_own_requests НЕ могут редактировать заявки (только просмотр)
+    # Пользователи с can_view_own_requests могут редактировать только свои заявки в статусе "На рассмотрении"
+    # (не могут редактировать заявки на себя, поданные другими)
     try:
         if user.user_division.can_view_own_requests:
+            if request_obj.requested_by == user:
+                return request_obj.status == request_obj.Status.PENDING
             return False
     except UserDivision.DoesNotExist:
         pass
@@ -111,9 +114,12 @@ def can_delete_request(user, request_obj):
     if user.is_staff:
         return True
     
-    # Пользователи с can_view_own_requests НЕ могут удалять заявки (только просмотр)
+    # Пользователи с can_view_own_requests могут удалять только свои заявки в статусе "На рассмотрении"
+    # (не могут удалять заявки на себя, поданные другими)
     try:
         if user.user_division.can_view_own_requests:
+            if request_obj.requested_by == user:
+                return request_obj.status == request_obj.Status.PENDING
             return False
     except UserDivision.DoesNotExist:
         pass
