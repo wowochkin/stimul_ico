@@ -110,17 +110,20 @@ class StimulusRequestSerializer(serializers.ModelSerializer):
 
 
 class RequestCampaignSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
     class Meta:
         model = RequestCampaign
         fields = [
             'id',
             'name',
             'status',
+            'status_display',
             'opens_at',
             'deadline',
-            'auto_close_day',
             'auto_close_enabled',
         ]
+        read_only_fields = ['status_display']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):

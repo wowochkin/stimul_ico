@@ -6,14 +6,31 @@ from .models import OneTimePayment, RequestCampaign
 
 
 class RequestCampaignForm(forms.ModelForm):
+    opens_at = forms.DateField(
+        label='Дата открытия',
+        widget=forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+        input_formats=['%Y-%m-%d'],
+    )
+    deadline = forms.DateField(
+        label='Дедлайн',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+        input_formats=['%Y-%m-%d'],
+    )
+    
     class Meta:
         model = RequestCampaign
-        fields = ['name', 'description', 'opens_at', 'deadline', 'auto_close_day', 'auto_close_enabled']
+        fields = ['name', 'description', 'opens_at', 'deadline', 'auto_close_enabled']
         widgets = {
-            'opens_at': forms.DateInput(attrs={'type': 'date'}),
-            'deadline': forms.DateInput(attrs={'type': 'date'}),
             'description': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Описание кампании'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Добавляем подсказку для флажка автозакрытия
+        self.fields['auto_close_enabled'].help_text = (
+            'При активации кампания автоматически закроется в 00:00 дня после дедлайна. '           
+        )
 
     def clean_deadline(self):
         opens_at = self.cleaned_data.get('opens_at')

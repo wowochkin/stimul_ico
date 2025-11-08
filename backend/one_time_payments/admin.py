@@ -20,7 +20,7 @@ class StimulusRequestInline(admin.TabularInline):
 
 @admin.register(RequestCampaign)
 class RequestCampaignAdmin(admin.ModelAdmin):
-    list_display = ('name', 'status', 'opens_at', 'deadline', 'auto_close_day', 'auto_close_enabled')
+    list_display = ('name', 'status', 'opens_at', 'deadline', 'auto_close_enabled')
     list_filter = ('status', 'auto_close_enabled', 'opens_at', 'deadline')
     search_fields = ('name',)
     readonly_fields = ('created_at', 'updated_at', 'closed_at', 'archived_at')

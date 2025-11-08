@@ -30,11 +30,17 @@ class RequestCampaign(models.Model):
     opens_at = models.DateField('Дата открытия')
     deadline = models.DateField('Дедлайн', blank=True, null=True)
     auto_close_day = models.PositiveSmallIntegerField(
-        'Дата автозакрытия',
+        'Дата автозакрытия (устарело)',
         default=15,
-        help_text='Если дедлайн не указан, кампания автоматически закрывается в указанный день месяца.'
+        help_text='Устаревшее поле, будет удалено.',
+        null=True,
+        blank=True,
     )
-    auto_close_enabled = models.BooleanField('Автоматическое закрытие', default=True)
+    auto_close_enabled = models.BooleanField(
+        'Автоматическое закрытие', 
+        default=True,
+        help_text='Кампания автоматически закроется в 00:00 дня после дедлайна.'
+    )
     closed_at = models.DateTimeField('Закрыта', blank=True, null=True)
     archived_at = models.DateTimeField('В архиве с', blank=True, null=True)
     created_at = models.DateTimeField('Создано', auto_now_add=True)
@@ -55,13 +61,18 @@ class RequestCampaign(models.Model):
             raise ValidationError({'deadline': 'Дедлайн не может быть раньше даты открытия.'})
 
     def should_auto_close(self, on_date: Optional[date] = None) -> bool:
+        """
+        Проверяет, должна ли кампания автоматически закрыться.
+        Кампания закрывается в 00:00 дня после дедлайна.
+        Например, если дедлайн 07.11.2025, то закрытие произойдет 08.11.2025 в 00:00.
+        """
         if not self.auto_close_enabled or self.status != self.Status.OPEN:
             return False
+        if not self.deadline:
+            return False
         on_date = on_date or timezone.localdate()
-        if self.deadline:
-            return on_date > self.deadline
-        # Автозакрытие по дню месяца
-        return on_date.day > self.auto_close_day
+        # Закрываем, если текущая дата больше дедлайна (наступил следующий день)
+        return on_date > self.deadline
 
     def open(self) -> None:
         if self.status != self.Status.DRAFT:
