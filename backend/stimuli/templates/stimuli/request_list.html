@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Заявки на стимулирование | {{ block.super }}{% endblock %}
 
@@ -40,93 +41,93 @@
             </div>
         </form>
     {% endif %}
-    <div class="table-wrapper">
+    <div class="table-wrapper" id="request-table-wrapper">
         <table class="table">
-            <thead>
-                <tr>
-                    {% if can_bulk_delete %}
-                        <th style="width:40px;"></th>
-                    {% endif %}
-                    <th>Создано</th>
-                    <th>Сотрудник</th>
-                    <th>Кампания</th>
-                    <th>Размер выплаты</th>
-                    <th>Статус</th>
-                    <th>Ответственный</th>
-                    <th>Обоснование</th>
-                    <th>Комментарий администратора</th>
-                    {% if show_manage_column %}
-                        <th style="width:180px;">Управление</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for request in requests %}
-                    <tr>
-                        {% if can_bulk_delete %}
-                            <td>
-                                {% if request.can_delete %}
-                                    <input type="checkbox" form="bulk-delete-form" name="selected_requests" value="{{ request.pk }}" class="request-checkbox">
-                                {% endif %}
-                            </td>
-                        {% endif %}
-                        <td>{{ request.created_at|date:'d.m.Y H:i' }}</td>
-                        <td>{{ request.employee.full_name }}</td>
-                        <td>{% if request.campaign %}<a href="{% url 'one_time_payments:campaign-detail' request.campaign_id %}">{{ request.campaign.name }}</a>{% else %}—{% endif %}</td>
-                        <td>{{ request.amount }}</td>
-                        <td><span class="status status-{{ request.status }}">{{ request.get_display_status }}</span></td>
-                        <td>{{ request.requested_by.get_full_name|default:request.requested_by.username }}</td>
-                        <td>{{ request.justification|linebreaksbr }}</td>
-                        <td>{{ request.admin_comment|linebreaksbr }}</td>
-                        {% if request.status == 'archived' %}
-                            <td>
-                                <span class="muted">Заявка в архиве</span>
-                            </td>
-                        {% elif request.can_change_status and user.is_staff %}
-                            {# Полная форма управления для суперпользователей #}
-                            <td>
-                                <form method="post" action="{% url 'request-status-update' request.pk %}" data-autosubmit="true" data-autosubmit-delay="200">
-                                    {% csrf_token %}
-                                    <div style="display:flex; flex-direction:column; gap:8px;">
-                                        <select name="status">
-                                            {% for value, label in request.Status.choices %}
-                                                <option value="{{ value }}" {% if value == request.status %}selected{% endif %}>{{ label }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <textarea name="admin_comment" rows="2" placeholder="Комментарий" data-autosubmit-delay="1200">{{ request.admin_comment }}</textarea>
-                                        {% if request.can_edit %}
-                                            <a href="{% url 'request-edit' request.pk %}" class="btn btn-text">Редактировать</a>
-                                        {% endif %}
+                    <thead>
+                        <tr>
+                            {% if can_bulk_delete %}
+                                <th style="width:40px;"></th>
+                            {% endif %}
+                            <th>Создано</th>
+                            <th>Сотрудник</th>
+                            <th>Кампания</th>
+                            <th>Размер выплаты</th>
+                            <th>Статус</th>
+                            <th>Ответственный</th>
+                            <th>Обоснование</th>
+                            <th>Комментарий администратора</th>
+                            {% if show_manage_column %}
+                                <th style="width:180px;">Управление</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in requests %}
+                            <tr id="request-{{ request.pk }}">
+                                {% if can_bulk_delete %}
+                                    <td>
                                         {% if request.can_delete %}
-                                            <a href="{% url 'request-delete' request.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
+                                            <input type="checkbox" form="bulk-delete-form" name="selected_requests" value="{{ request.pk }}" class="request-checkbox">
                                         {% endif %}
-                                    </div>
-                                </form>
-                            </td>
-                        {% elif request.can_edit or request.can_delete %}
-                            <td>
-                                <div style="display:flex; flex-direction:column; gap:8px;">
-                                    {% if request.can_edit %}
-                                        <a href="{% url 'request-edit' request.pk %}" class="btn btn-text">Редактировать</a>
-                                    {% endif %}
-                                    {% if request.can_delete %}
-                                        <a href="{% url 'request-delete' request.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        {% else %}
-                            <td>
-                                <span class="muted">Нет прав на управление</span>
-                            </td>
-                        {% endif %}
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="{{ table_colspan }}">Заявок нет.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                                    </td>
+                                {% endif %}
+                                <td>{{ request.created_at|date:'d.m.Y H:i' }}</td>
+                                <td>{{ request.employee.full_name }}</td>
+                                <td>{% if request.campaign %}<a href="{% url 'one_time_payments:campaign-detail' request.campaign_id %}">{{ request.campaign.name }}</a>{% else %}—{% endif %}</td>
+                                <td>{{ request.amount }}</td>
+                                <td><span class="status status-{{ request.status }}">{{ request.get_display_status }}</span></td>
+                                <td>{{ request.requested_by.get_full_name|default:request.requested_by.username }}</td>
+                                <td>{{ request.justification|linebreaksbr }}</td>
+                                <td>{{ request.admin_comment|linebreaksbr }}</td>
+                                {% if request.status == 'archived' %}
+                                    <td>
+                                        <span class="muted">Заявка в архиве</span>
+                                    </td>
+                                {% elif request.can_change_status and user.is_staff %}
+                                    {# Полная форма управления для суперпользователей #}
+                                    <td>
+                                        <form method="post" action="{% url 'request-status-update' request.pk %}" data-autosubmit="true" data-autosubmit-delay="200" data-preserve-scroll="true">
+                                            {% csrf_token %}
+                                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                                <select name="status">
+                                                    {% for value, label in request.Status.choices %}
+                                                        <option value="{{ value }}" {% if value == request.status %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <textarea name="admin_comment" rows="2" placeholder="Комментарий" data-autosubmit-delay="1200">{{ request.admin_comment }}</textarea>
+                                                {% if request.can_edit %}
+                                                    <a href="{% url 'request-edit' request.pk %}" class="btn btn-text">Редактировать</a>
+                                                {% endif %}
+                                                {% if request.can_delete %}
+                                                    <a href="{% url 'request-delete' request.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
+                                                {% endif %}
+                                            </div>
+                                        </form>
+                                    </td>
+                                {% elif request.can_edit or request.can_delete %}
+                                    <td>
+                                        <div style="display:flex; flex-direction:column; gap:4px;">
+                                            {% if request.can_edit %}
+                                                <a href="{% url 'request-edit' request.pk %}" class="btn btn-text">Редактировать</a>
+                                            {% endif %}
+                                            {% if request.can_delete %}
+                                                <a href="{% url 'request-delete' request.pk %}" class="btn btn-text" style="color:#b4231a;">Удалить</a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                {% else %}
+                                    <td>
+                                        <span class="muted">Нет прав на управление</span>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="{{ table_colspan }}">Заявок нет.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
     </div>
     {% if is_paginated %}
         <div class="pagination">
@@ -140,4 +141,243 @@
         </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+    const scrollStorageKey = 'stimuli-request-list-scroll';
+
+    const getScrollY = () => {
+        if (typeof window.scrollY === 'number') {
+            return window.scrollY;
+        }
+        if (typeof window.pageYOffset === 'number') {
+            return window.pageYOffset;
+        }
+        const doc = document.documentElement || document.body || {};
+        return doc.scrollTop || 0;
+    };
+
+    const getScrollX = () => {
+        if (typeof window.scrollX === 'number') {
+            return window.scrollX;
+        }
+        if (typeof window.pageXOffset === 'number') {
+            return window.pageXOffset;
+        }
+        const doc = document.documentElement || document.body || {};
+        return doc.scrollLeft || 0;
+    };
+
+    const clampScrollValue = (value, max) => {
+        if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value)) {
+            return 0;
+        }
+        let result = Math.max(0, value);
+        if (typeof max === 'number' && Number.isFinite(max) && max >= 0) {
+            result = Math.min(result, max);
+        }
+        return result;
+    };
+
+    const getMaxScrollY = () => {
+        const doc = document.documentElement || {};
+        const body = document.body || {};
+        const scrollHeight = Math.max(doc.scrollHeight || 0, body.scrollHeight || 0);
+        const viewportHeight = window.innerHeight || doc.clientHeight || body.clientHeight || 0;
+        return Math.max(scrollHeight - viewportHeight, 0);
+    };
+
+    const clampScrollY = (value, max) => clampScrollValue(value, typeof max === 'number' ? max : getMaxScrollY());
+
+    const resolveAnchorScrollY = (element, fallback, max) => {
+        if (!element || typeof element.getBoundingClientRect !== 'function') {
+            return clampScrollY(fallback, max);
+        }
+
+        const rect = element.getBoundingClientRect();
+        const currentScrollY = getScrollY();
+        const elementTop = rect.top + currentScrollY;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || rect.height;
+        const targetCenter = elementTop - (viewportHeight / 2) + (rect.height / 2);
+        if (!Number.isFinite(targetCenter)) {
+            return clampScrollY(fallback, max);
+        }
+        return clampScrollY(targetCenter, max);
+    };
+
+    const restoreState = (data) => {
+        let anchorElement = null;
+        if (data.anchor) {
+            anchorElement = document.getElementById(data.anchor);
+        }
+
+        let lastScrollPosition = null;
+
+        const applyScroll = () => {
+            const maxY = getMaxScrollY();
+            let targetY;
+            if (typeof data.scrollY === 'number' && Number.isFinite(data.scrollY)) {
+                targetY = clampScrollY(data.scrollY, maxY);
+            } else if (anchorElement) {
+                targetY = resolveAnchorScrollY(anchorElement, data.scrollY, maxY);
+            } else {
+                targetY = clampScrollY(data.scrollY, maxY);
+            }
+            const doc = document.documentElement || {};
+            const body = document.body || {};
+            const scrollWidth = Math.max(doc.scrollWidth || 0, body.scrollWidth || 0);
+            const viewportWidth = window.innerWidth || doc.clientWidth || body.clientWidth || 0;
+            const maxX = Math.max(scrollWidth - viewportWidth, 0);
+            const targetX = (typeof data.scrollX === 'number' && Number.isFinite(data.scrollX))
+                ? clampScrollValue(data.scrollX, maxX)
+                : clampScrollValue(getScrollX(), maxX);
+
+            lastScrollPosition = { top: targetY, left: targetX };
+
+            window.scrollTo({
+                top: targetY,
+                left: targetX,
+                behavior: 'auto'
+            });
+        };
+
+        const reapplyLastScroll = () => {
+            if (!lastScrollPosition) {
+                return;
+            }
+            window.scrollTo({
+                top: lastScrollPosition.top,
+                left: lastScrollPosition.left,
+                behavior: 'auto'
+            });
+        };
+
+        const applyWrapperScroll = () => {
+            if (!data.wrapperId) {
+                return;
+            }
+            const wrapper = document.getElementById(data.wrapperId);
+            if (!wrapper) {
+                return;
+            }
+
+            if (typeof data.wrapperScrollLeft === 'number') {
+                const maxLeft = Math.max(wrapper.scrollWidth - wrapper.clientWidth, 0);
+                wrapper.scrollLeft = clampScrollValue(data.wrapperScrollLeft, maxLeft);
+            }
+
+            if (typeof data.wrapperScrollTop === 'number') {
+                const maxTop = Math.max(wrapper.scrollHeight - wrapper.clientHeight, 0);
+                wrapper.scrollTop = clampScrollValue(data.wrapperScrollTop, maxTop);
+            }
+        };
+
+        const applyFocus = () => {
+            if (!data.fieldName) {
+                return;
+            }
+            let field = null;
+            if (anchorElement) {
+                field = anchorElement.querySelector('[name="' + data.fieldName + '"]');
+            }
+            if (!field) {
+                field = document.querySelector('[name="' + data.fieldName + '"]');
+            }
+            if (!field) {
+                return;
+            }
+            try {
+                field.focus({ preventScroll: true });
+            } catch (error) {
+                if (typeof field.focus === 'function') {
+                    field.focus();
+                    requestAnimationFrame(reapplyLastScroll);
+                }
+            }
+            requestAnimationFrame(reapplyLastScroll);
+            if (typeof data.selectionStart === 'number' && typeof data.selectionEnd === 'number' && typeof field.setSelectionRange === 'function') {
+                field.setSelectionRange(data.selectionStart, data.selectionEnd);
+            } else if (field.value && typeof field.value.length === 'number' && typeof field.setSelectionRange === 'function') {
+                const length = field.value.length;
+                field.setSelectionRange(length, length);
+            }
+            requestAnimationFrame(reapplyLastScroll);
+        };
+
+        requestAnimationFrame(() => {
+            applyWrapperScroll();
+            applyScroll();
+            requestAnimationFrame(applyFocus);
+        });
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        let saved = null;
+        try {
+            saved = sessionStorage.getItem(scrollStorageKey);
+        } catch (error) {
+            saved = null;
+        }
+        if (saved) {
+            try {
+                sessionStorage.removeItem(scrollStorageKey);
+            } catch (error) {
+                // Игнорируем ошибки удаления
+            }
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed && typeof parsed === 'object') {
+                    restoreState(parsed);
+                }
+            } catch (error) {
+                // Игнорируем ошибки парсинга и не восстанавливаем состояние
+            }
+        }
+
+        document.querySelectorAll('form[data-preserve-scroll="true"]').forEach((form) => {
+            form.addEventListener('submit', () => {
+                const activeElement = document.activeElement;
+                const payload = {
+                    scrollY: getScrollY(),
+                    scrollX: getScrollX()
+                };
+
+                const anchor = form.closest('tr[id]');
+                if (anchor && anchor.id) {
+                    payload.anchor = anchor.id;
+                }
+
+                let wrapper = document.getElementById('request-table-wrapper');
+                if (!wrapper) {
+                    wrapper = form.closest('.table-wrapper');
+                }
+                if (wrapper) {
+                    if (!wrapper.id) {
+                        wrapper.id = 'request-table-wrapper';
+                    }
+                    payload.wrapperId = wrapper.id;
+                    payload.wrapperScrollLeft = wrapper.scrollLeft;
+                    payload.wrapperScrollTop = wrapper.scrollTop;
+                }
+
+                if (activeElement && form.contains(activeElement) && activeElement.name) {
+                    payload.fieldName = activeElement.name;
+                    if (typeof activeElement.selectionStart === 'number' && typeof activeElement.selectionEnd === 'number') {
+                        payload.selectionStart = activeElement.selectionStart;
+                        payload.selectionEnd = activeElement.selectionEnd;
+                    }
+                }
+
+                try {
+                    sessionStorage.setItem(scrollStorageKey, JSON.stringify(payload));
+                } catch (error) {
+                    // Если sessionStorage недоступен, просто пропускаем сохранение
+                }
+            });
+        });
+    });
+})();
+</script>
 {% endblock %}

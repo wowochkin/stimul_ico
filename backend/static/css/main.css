@@ -135,9 +135,8 @@ a:hover {
 
 .container {
     width: 100%;
-    max-width: 1600px;
     margin: 0 auto;
-    padding: clamp(24px, 4vw, 48px);
+    padding: clamp(16px, 3vw, 40px);
     box-sizing: border-box;
 }
 
@@ -147,10 +146,13 @@ a:hover {
 
 .table-wrapper {
     overflow-x: auto;
+    overflow-y: visible;
     border-radius: 12px;
     margin-top: 16px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
+    width: 100%;
+    container-type: inline-size;
 }
 
 .table-wrapper::-webkit-scrollbar {
@@ -179,20 +181,49 @@ a:hover {
     overflow: hidden;
     box-shadow: 0 8px 24px rgba(37, 71, 94, 0.08);
     margin-top: 16px;
-}
-
-.table thead {
-    background-color: rgba(37, 71, 94, 0.07);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    table-layout: auto;
+    font-size: 0.95rem;
 }
 
 .table th,
 .table td {
-    padding: 14px 16px;
+    padding: 10px 14px;
     border-bottom: 1px solid #edf2f5;
     text-align: left;
+}
+
+.table thead {
+    background-color: rgba(37, 71, 94, 0.07);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.table td form,
+.table td form > * {
+    width: 100%;
+}
+
+.table td select,
+.table td textarea,
+.table td input[type="text"],
+.table td input[type="number"],
+.table td input[type="email"],
+.table td input[type="search"],
+.table td input[type="tel"],
+.table td input[type="url"] {
+    width: 100%;
+    min-width: 0;
+    font-size: 0.9rem;
+    padding: 6px 8px;
+    border: 1px solid #d1d9e0;
+    border-radius: 6px;
+}
+
+.table td textarea {
+    min-height: 50px;
+    resize: vertical;
 }
 
 .table tbody tr:hover {
@@ -244,8 +275,8 @@ a:hover {
     background-color: #fff;
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(37, 71, 94, 0.08);
-    padding: 24px;
-    margin-bottom: 24px;
+    padding: clamp(16px, 2.4vw, 22px);
+    margin-bottom: 20px;
     overflow: hidden;
 }
 
@@ -286,7 +317,7 @@ a:hover {
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 16px;
+    gap: 12px;
 }
 
 .filter-form {
@@ -301,7 +332,38 @@ a:hover {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    margin-top: 12px;
+    margin-top: 8px;
+}
+
+.table-control-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.table-zoom-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #25475e;
+}
+
+.table-zoom-control span:first-child {
+    font-weight: 600;
+}
+
+.table-zoom-control input[type='range'] {
+    width: 140px;
+    accent-color: var(--primary);
+}
+
+.table-zoom-value {
+    font-weight: 600;
+    min-width: 3ch;
+    text-align: right;
 }
 
 .column-selector {
@@ -743,7 +805,7 @@ a:hover {
 
     .table th,
     .table td {
-        padding: 12px 14px;
+        padding: 10px 14px;
     }
 }
 
@@ -814,6 +876,24 @@ a:hover {
 
     .filter-form {
         overflow-x: auto;
+    }
+
+    .table-control-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .table-zoom-control {
+        justify-content: space-between;
+    }
+
+    .table-zoom-control input[type='range'] {
+        width: 100%;
+    }
+
+    .table-zoom-value {
+        text-align: left;
     }
 
     .bulk-actions {
@@ -915,6 +995,6 @@ a:hover {
 /* Большие экраны */
 @media (min-width: 1400px) {
     .container {
-        padding: 48px;
+        padding: 40px;
     }
 }

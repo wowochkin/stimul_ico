@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Список сотрудников | {{ block.super }}{% endblock %}
 
@@ -52,91 +53,91 @@
         </div>
     </form>
     </div>
-    <div class="table-wrapper">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ФИО</th>
-                {% for key, label in available_columns %}
-                    {% if key in selected_columns %}
-                        <th>{{ label }}</th>
-                    {% endif %}
-                {% endfor %}
-                {% if perms.stimuli.change_employee %}
-                    <th style="width:100px;">Действия</th>
-                {% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for employee in employees %}
-                <tr>
-                    <td>{{ employee.full_name }}</td>
-                    {% for key, label in available_columns %}
-                        {% if key in selected_columns %}
-                            <td>
-                                {% if key == 'division' %}
-                                    {{ employee.division.name|default:'—' }}
-                                {% elif key == 'position' %}
-                                    {{ employee.position.name|default:'—' }}
-                                {% elif key == 'base_salary' %}
-                                    {{ employee.position.base_salary|default:0|floatformat:2 }}
-                                {% elif key == 'rate' %}
-                                    {{ employee.rate|floatformat:3 }}
-                                {% elif key == 'salary' %}
-                                    {{ employee.salary_amount|floatformat:2 }}
-                                {% elif key == 'assignments' %}
-                                    {% with assignments=employee.assignments.all %}
-                                        {% if assignments %}
-                                            <ul class="assignment-list">
-                                                {% for item in assignments %}
-                                                    <li>
-                                                        {{ item.position.name|default:'—' }} — {{ item.rate|floatformat:3 }}
-                                                        {% if item.allowance_amount %}
-                                                            (надбавка {{ item.allowance_amount|floatformat:2 }}{% if item.allowance_until %}, до {{ item.allowance_until|date:'d.m.Y' }}{% endif %})
-                                                        {% endif %}
-                                                    </li>
-                                                {% endfor %}
-                                            </ul>
-                                        {% else %}
-                                            —
-                                        {% endif %}
-                                    {% endwith %}
-                                {% elif key == 'assignments_salary' %}
-                                    {{ employee.assignments_salary_amount|floatformat:2 }}
-                                {% elif key == 'total_salary' %}
-                                    {{ employee.total_salary_amount|floatformat:2 }}
-                                {% elif key == 'allowance_amount' %}
-                                    {{ employee.allowance_total|floatformat:2 }}
-                                {% elif key == 'allowance_reason' %}
-                                    {{ employee.allowance_reason|default:'—' }}
-                                {% elif key == 'allowance_until' %}
-                                    {{ employee.allowance_until|date:'d.m.Y'|default:'—' }}
-                                {% elif key == 'payment' %}
-                                    {{ employee.payment|floatformat:2 }}
-                                {% elif key == 'justification' %}
-                                    {{ employee.justification|default:'—'|linebreaksbr }}
-                                {% elif key == 'total_payments' %}
-                                    {{ employee.total_payments|floatformat:2 }}
+    <div class="table-wrapper" id="employee-table-wrapper">
+        <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ФИО</th>
+                            {% for key, label in available_columns %}
+                                {% if key in selected_columns %}
+                                    <th>{{ label }}</th>
                                 {% endif %}
-                            </td>
-                        {% endif %}
-                    {% endfor %}
-                    {% if perms.stimuli.change_employee %}
-                        <td>
-                            <a class="btn btn-text" href="{% url 'employee-edit' employee.pk %}">Изменить</a>
-                            {% if perms.stimuli.delete_employee %}
-                                <a class="btn btn-text" href="{% url 'employee-delete' employee.pk %}">Удалить</a>
+                            {% endfor %}
+                            {% if perms.stimuli.change_employee %}
+                                <th style="width:100px;">Действия</th>
                             {% endif %}
-                        </td>
-                    {% endif %}
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="{{ table_colspan }}">Нет сотрудников под выбранные фильтры.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employees %}
+                            <tr>
+                                <td>{{ employee.full_name }}</td>
+                                {% for key, label in available_columns %}
+                                    {% if key in selected_columns %}
+                                        <td>
+                                            {% if key == 'division' %}
+                                                {{ employee.division.name|default:'—' }}
+                                            {% elif key == 'position' %}
+                                                {{ employee.position.name|default:'—' }}
+                                            {% elif key == 'base_salary' %}
+                                                {{ employee.position.base_salary|default:0|floatformat:2 }}
+                                            {% elif key == 'rate' %}
+                                                {{ employee.rate|floatformat:3 }}
+                                            {% elif key == 'salary' %}
+                                                {{ employee.salary_amount|floatformat:2 }}
+                                            {% elif key == 'assignments' %}
+                                                {% with assignments=employee.assignments.all %}
+                                                    {% if assignments %}
+                                                        <ul class="assignment-list">
+                                                            {% for item in assignments %}
+                                                                <li>
+                                                                    {{ item.position.name|default:'—' }} — {{ item.rate|floatformat:3 }}
+                                                                    {% if item.allowance_amount %}
+                                                                        (надбавка {{ item.allowance_amount|floatformat:2 }}{% if item.allowance_until %}, до {{ item.allowance_until|date:'d.m.Y' }}{% endif %})
+                                                                    {% endif %}
+                                                                </li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    {% else %}
+                                                        —
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% elif key == 'assignments_salary' %}
+                                                {{ employee.assignments_salary_amount|floatformat:2 }}
+                                            {% elif key == 'total_salary' %}
+                                                {{ employee.total_salary_amount|floatformat:2 }}
+                                            {% elif key == 'allowance_amount' %}
+                                                {{ employee.allowance_total|floatformat:2 }}
+                                            {% elif key == 'allowance_reason' %}
+                                                {{ employee.allowance_reason|default:'—' }}
+                                            {% elif key == 'allowance_until' %}
+                                                {{ employee.allowance_until|date:'d.m.Y'|default:'—' }}
+                                            {% elif key == 'payment' %}
+                                                {{ employee.payment|floatformat:2 }}
+                                            {% elif key == 'justification' %}
+                                                {{ employee.justification|default:'—'|linebreaksbr }}
+                                            {% elif key == 'total_payments' %}
+                                                {{ employee.total_payments|floatformat:2 }}
+                                            {% endif %}
+                                        </td>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if perms.stimuli.change_employee %}
+                                    <td>
+                                        <a class="btn btn-text" href="{% url 'employee-edit' employee.pk %}">Изменить</a>
+                                        {% if perms.stimuli.delete_employee %}
+                                            <a class="btn btn-text" href="{% url 'employee-delete' employee.pk %}">Удалить</a>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="{{ table_colspan }}">Нет сотрудников под выбранные фильтры.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
     </div>
     <div class="pagination" style="margin-top:12px;">
         {% if show_all %}
