@@ -135,6 +135,55 @@ class RequestCampaign(models.Model):
             self.archived_at = timezone.now()
             self.save(update_fields=['status', 'archived_at'])
 
+    def get_requested_amounts_summary(self) -> dict:
+        """
+        Возвращает сводку по запрошенным средствам в разрезе статусов.
+        """
+        from decimal import Decimal
+        from django.db.models import Sum, Q
+        from stimuli.models import StimulusRequest
+        
+        base_qs = StimulusRequest.objects.filter(campaign=self)
+        
+        # Подсчитываем суммы по каждому статусу
+        pending_sum = base_qs.filter(status=StimulusRequest.Status.PENDING).aggregate(
+            total=Sum('amount')
+        )['total'] or Decimal('0')
+        
+        # Для одобренных: включаем и текущие approved, и архивированные с пометкой "Одобрено"
+        approved_sum = base_qs.filter(
+            Q(status=StimulusRequest.Status.APPROVED) |
+            Q(status=StimulusRequest.Status.ARCHIVED, final_status__icontains='Одобрено')
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        # Для отклоненных: включаем и текущие rejected, и архивированные с пометкой "Отклонено"
+        rejected_sum = base_qs.filter(
+            Q(status=StimulusRequest.Status.REJECTED) |
+            Q(status=StimulusRequest.Status.ARCHIVED, final_status__icontains='Отклонено')
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        # Общая сумма всех заявок
+        total_sum = base_qs.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        # Считаем количество заявок по статусам
+        pending_count = base_qs.filter(status=StimulusRequest.Status.PENDING).count()
+        approved_count = base_qs.filter(
+            Q(status=StimulusRequest.Status.APPROVED) |
+            Q(status=StimulusRequest.Status.ARCHIVED, final_status__icontains='Одобрено')
+        ).count()
+        rejected_count = base_qs.filter(
+            Q(status=StimulusRequest.Status.REJECTED) |
+            Q(status=StimulusRequest.Status.ARCHIVED, final_status__icontains='Отклонено')
+        ).count()
+        total_count = base_qs.count()
+        
+        return {
+            'pending': {'amount': pending_sum, 'count': pending_count},
+            'approved': {'amount': approved_sum, 'count': approved_count},
+            'rejected': {'amount': rejected_sum, 'count': rejected_count},
+            'total': {'amount': total_sum, 'count': total_count},
+        }
+
 
 class OneTimePayment(models.Model):
     employee = models.ForeignKey(

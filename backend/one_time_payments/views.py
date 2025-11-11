@@ -440,6 +440,9 @@ class RequestCampaignDetailView(SortingMixin, LoginRequiredMixin, PermissionRequ
         context['sorting'] = self._build_sorting_context()
         context['requests_reset_url'] = self._build_query(exclude=['employees', 'divisions', 'status', 'requested_by'])
         context['approved_reset_url'] = self._build_query(exclude=['approved_employees', 'approved_divisions', 'approved_responsible'])
+        
+        # Добавляем сводку по запрошенным средствам
+        context['amounts_summary'] = campaign.get_requested_amounts_summary()
 
         return context
 

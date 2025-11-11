@@ -19,6 +19,34 @@
     {% if campaign.description %}
         <p style="margin-bottom:24px; white-space:pre-wrap;">{{ campaign.description }}</p>
     {% endif %}
+    
+    {# Блок сводки по запрошенным средствам #}
+    <section style="margin-bottom:32px;">
+        <h3 style="margin-bottom:16px;">Сводка по запрошенным средствам</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+            <div style="background: rgba(240, 165, 0, 0.08); padding: 20px; border-radius: 12px; border-left: 4px solid #f0a500;">
+                <div style="font-size: 0.85rem; color: #9c5b00; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">На рассмотрении</div>
+                <div style="font-size: 1.75rem; font-weight: 700; color: #1f2933; margin-bottom: 4px;">{{ amounts_summary.pending.amount|floatformat:2 }} ₽</div>
+                <div style="font-size: 0.9rem; color: #5c6b73;">Заявок: {{ amounts_summary.pending.count }}</div>
+            </div>
+            <div style="background: rgba(34, 197, 94, 0.08); padding: 20px; border-radius: 12px; border-left: 4px solid #10b981;">
+                <div style="font-size: 0.85rem; color: #0c7a31; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Одобрено</div>
+                <div style="font-size: 1.75rem; font-weight: 700; color: #1f2933; margin-bottom: 4px;">{{ amounts_summary.approved.amount|floatformat:2 }} ₽</div>
+                <div style="font-size: 0.9rem; color: #5c6b73;">Заявок: {{ amounts_summary.approved.count }}</div>
+            </div>
+            <div style="background: rgba(239, 68, 68, 0.08); padding: 20px; border-radius: 12px; border-left: 4px solid #ef4444;">
+                <div style="font-size: 0.85rem; color: #b4231a; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Отклонено</div>
+                <div style="font-size: 1.75rem; font-weight: 700; color: #1f2933; margin-bottom: 4px;">{{ amounts_summary.rejected.amount|floatformat:2 }} ₽</div>
+                <div style="font-size: 0.9rem; color: #5c6b73;">Заявок: {{ amounts_summary.rejected.count }}</div>
+            </div>
+            <div style="background: rgba(37, 71, 94, 0.08); padding: 20px; border-radius: 12px; border-left: 4px solid #25475e;">
+                <div style="font-size: 0.85rem; color: #25475e; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Всего</div>
+                <div style="font-size: 1.75rem; font-weight: 700; color: #1f2933; margin-bottom: 4px;">{{ amounts_summary.total.amount|floatformat:2 }} ₽</div>
+                <div style="font-size: 0.9rem; color: #5c6b73;">Заявок: {{ amounts_summary.total.count }}</div>
+            </div>
+        </div>
+    </section>
+    
     {% if perms.one_time_payments.change_requestcampaign %}
         {% if available_actions %}
             <section style="margin-bottom:24px;">
