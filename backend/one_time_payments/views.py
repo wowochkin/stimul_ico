@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
@@ -441,8 +441,30 @@ class RequestCampaignDetailView(SortingMixin, LoginRequiredMixin, PermissionRequ
         context['requests_reset_url'] = self._build_query(exclude=['employees', 'divisions', 'status', 'requested_by'])
         context['approved_reset_url'] = self._build_query(exclude=['approved_employees', 'approved_divisions', 'approved_responsible'])
         
-        # Добавляем сводку по запрошенным средствам
-        context['amounts_summary'] = campaign.get_requested_amounts_summary()
+        # Добавляем сводку по запрошенным средствам, чувствительную к текущим фильтрам
+        # Считаем по уже отфильтрованному набору заявок (filtered_requests)
+        pending_qs = filtered_requests.filter(status=StimulusRequest.Status.PENDING)
+        approved_qs = filtered_requests.filter(
+            Q(status=StimulusRequest.Status.APPROVED) |
+            Q(status=StimulusRequest.Status.ARCHIVED, final_status__icontains='Одобрено')
+        )
+        rejected_qs = filtered_requests.filter(
+            Q(status=StimulusRequest.Status.REJECTED) |
+            Q(status=StimulusRequest.Status.ARCHIVED, final_status__icontains='Отклонено')
+        )
+        total_qs = filtered_requests
+
+        pending_sum = pending_qs.aggregate(total=Sum('amount'))['total'] or 0
+        approved_sum = approved_qs.aggregate(total=Sum('amount'))['total'] or 0
+        rejected_sum = rejected_qs.aggregate(total=Sum('amount'))['total'] or 0
+        total_sum = total_qs.aggregate(total=Sum('amount'))['total'] or 0
+
+        context['amounts_summary'] = {
+            'pending': {'amount': pending_sum, 'count': pending_qs.count()},
+            'approved': {'amount': approved_sum, 'count': approved_qs.count()},
+            'rejected': {'amount': rejected_sum, 'count': rejected_qs.count()},
+            'total': {'amount': total_sum, 'count': total_qs.count()},
+        }
 
         return context
 
