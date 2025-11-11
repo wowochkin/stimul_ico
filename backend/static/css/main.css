@@ -201,6 +201,15 @@ a:hover {
     font-weight: 600;
 }
 
+.table thead th {
+    white-space: nowrap;
+}
+
+.table thead th a {
+    white-space: nowrap;
+    display: inline-block;
+}
+
 .table td form,
 .table td form > * {
     width: 100%;
