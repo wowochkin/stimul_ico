@@ -8,6 +8,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:16px;">
         <h2>Заявки на стимулирование</h2>
         <div style="display:flex; gap:12px;">
+            <a class="btn btn-text" href="{{ export_url }}">Экспорт в Excel</a>
             {% if perms.stimuli.add_stimulusrequest %}
                 <a class="btn btn-primary" href="{% url 'request-create' %}">Новая заявка</a>
                 <a class="btn btn-primary" href="{% url 'request-bulk-create' %}">Назначить подразделению</a>
@@ -15,16 +16,249 @@
         </div>
     </div>
     <div class="filter-wrapper">
-    <form method="get" class="filter-form" data-autosubmit="true" data-autosubmit-delay="400">
+    <style>
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .form-grid > div > label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .multi-filter {
+            position: relative;
+            width: 100%;
+        }
+        .multi-filter__toggle {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 38px;
+            padding: 8px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            background: #fff;
+            color: inherit;
+            cursor: pointer;
+            gap: 8px;
+            box-sizing: border-box;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .multi-filter__toggle:hover,
+        .multi-filter.open .multi-filter__toggle {
+            border-color: rgba(15, 91, 255, 0.45);
+            box-shadow: 0 0 0 3px rgba(15, 91, 255, 0.12);
+        }
+                .multi-filter__toggle span[data-label] {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    text-align: left;
+                    flex: 1;
+                }
+        .multi-filter__toggle::after {
+            content: '';
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid rgba(0, 0, 0, 0.45);
+            transition: transform 0.2s ease;
+        }
+        .multi-filter.open .multi-filter__toggle::after {
+            transform: rotate(180deg);
+        }
+                .multi-filter__menu {
+                    position: absolute;
+                    top: calc(100% + 4px);
+                    left: 0;
+                    right: 0;
+                    padding: 8px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                    max-height: 270px;
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                    background: #fff;
+                    border: 1px solid rgba(15, 23, 42, 0.12);
+                    border-radius: 10px;
+                    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.18);
+                    opacity: 0;
+                    visibility: hidden;
+                    pointer-events: none;
+                    transform: translateY(-6px);
+                    transition: opacity 0.16s ease, transform 0.16s ease;
+                    z-index: 1000;
+                    min-width: 0;
+                }
+        .multi-filter.open .multi-filter__menu {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+                .multi-filter__menu label {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 14px;
+                    line-height: 1.4;
+                    cursor: pointer;
+                    padding: 6px 8px;
+                    border-radius: 6px;
+                    transition: background-color 0.15s ease;
+                    white-space: nowrap;
+                    min-width: 0;
+                }
+                .multi-filter__menu label:hover {
+                    background-color: rgba(15, 91, 255, 0.08);
+                }
+                .multi-filter__menu input[type="checkbox"] {
+                    margin: 0;
+                    flex-shrink: 0;
+                    width: 16px;
+                    height: 16px;
+                }
+    </style>
+    <form method="get" class="filter-form" data-preserve-scroll="true">
         <div class="form-grid">
-            {% for field in filter.form %}
-                <div>
-                    <label>{{ field.label }}</label>
-                    {{ field }}
+            <div>
+                <label>Сотрудник</label>
+                <div data-multiselect="employees" class="multi-filter" data-default-label="Все сотрудники" data-counter-label="Сотрудники">
+                    <button type="button" class="multi-filter__toggle">
+                        <span data-label>
+                            {% if selected_employee_ids %}
+                                Сотрудники ({{ selected_employee_ids|length }})
+                            {% else %}
+                                Все сотрудники
+                            {% endif %}
+                        </span>
+                    </button>
+                    <div class="multi-filter__menu">
+                        <label>
+                            <input type="checkbox" name="employees" value="__all__" data-select-all data-label="Все сотрудники" {% if not selected_employee_ids %}checked{% endif %}>
+                            Все сотрудники
+                        </label>
+                        {% for employee in employee_options %}
+                            <label>
+                                <input type="checkbox" name="employees" value="{{ employee.id }}" data-option data-label="{{ employee.full_name }}" {% if employee.id in selected_employee_ids %}checked{% endif %}>
+                                {{ employee.full_name }}
+                            </label>
+                        {% endfor %}
+                    </div>
                 </div>
-            {% endfor %}
+            </div>
+            <div>
+                <label>Подразделение</label>
+                <div data-multiselect="divisions" class="multi-filter" data-default-label="Все подразделения" data-counter-label="Подразделения">
+                    <button type="button" class="multi-filter__toggle">
+                        <span data-label>
+                            {% if selected_division_ids %}
+                                Подразделения ({{ selected_division_ids|length }})
+                            {% else %}
+                                Все подразделения
+                            {% endif %}
+                        </span>
+                    </button>
+                    <div class="multi-filter__menu">
+                        <label>
+                            <input type="checkbox" name="divisions" value="__all__" data-select-all data-label="Все подразделения" {% if not selected_division_ids %}checked{% endif %}>
+                            Все подразделения
+                        </label>
+                        {% for division in division_options %}
+                            <label>
+                                <input type="checkbox" name="divisions" value="{{ division.id }}" data-option data-label="{{ division.name }}" {% if division.id in selected_division_ids %}checked{% endif %}>
+                                {{ division.name }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label>Статус</label>
+                <div data-multiselect="statuses" class="multi-filter" data-default-label="Все статусы" data-counter-label="Статусы">
+                    <button type="button" class="multi-filter__toggle">
+                        <span data-label>
+                            {% if selected_statuses %}
+                                Статусы ({{ selected_statuses|length }})
+                            {% else %}
+                                Все статусы
+                            {% endif %}
+                        </span>
+                    </button>
+                    <div class="multi-filter__menu">
+                        <label>
+                            <input type="checkbox" name="status" value="__all__" data-select-all data-label="Все статусы" {% if not selected_statuses %}checked{% endif %}>
+                            Все статусы
+                        </label>
+                        {% for value, label in status_options %}
+                            <label>
+                                <input type="checkbox" name="status" value="{{ value }}" data-option data-label="{{ label }}" {% if value in selected_statuses %}checked{% endif %}>
+                                {{ label }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label>Ответственный</label>
+                <div data-multiselect="responsibles" class="multi-filter" data-default-label="Все ответственные" data-counter-label="Ответственные">
+                    <button type="button" class="multi-filter__toggle">
+                        <span data-label>
+                            {% if selected_responsible_ids %}
+                                Ответственные ({{ selected_responsible_ids|length }})
+                            {% else %}
+                                Все ответственные
+                            {% endif %}
+                        </span>
+                    </button>
+                    <div class="multi-filter__menu">
+                        <label>
+                            <input type="checkbox" name="requested_by" value="__all__" data-select-all data-label="Все ответственные" {% if not selected_responsible_ids %}checked{% endif %}>
+                            Все ответственные
+                        </label>
+                        {% for user in responsible_options %}
+                            <label>
+                                <input type="checkbox" name="requested_by" value="{{ user.id }}" data-option data-label="{{ user.get_full_name|default:user.username }}" {% if user.id in selected_responsible_ids %}checked{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label>Кампания</label>
+                <div data-multiselect="campaigns" class="multi-filter" data-default-label="Все кампании" data-counter-label="Кампании">
+                    <button type="button" class="multi-filter__toggle">
+                        <span data-label>
+                            {% if selected_campaign_ids %}
+                                Кампании ({{ selected_campaign_ids|length }})
+                            {% else %}
+                                Все кампании
+                            {% endif %}
+                        </span>
+                    </button>
+                    <div class="multi-filter__menu">
+                        <label>
+                            <input type="checkbox" name="campaign" value="__all__" data-select-all data-label="Все кампании" {% if not selected_campaign_ids %}checked{% endif %}>
+                            Все кампании
+                        </label>
+                        {% for campaign in campaign_options %}
+                            <label>
+                                <input type="checkbox" name="campaign" value="{{ campaign.id }}" data-option data-label="{{ campaign.name }}" {% if campaign.id in selected_campaign_ids %}checked{% endif %}>
+                                {{ campaign.name }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="filter-actions">
+        <input type="hidden" name="sort" value="{{ sorting.current_sort }}">
+        <input type="hidden" name="direction" value="{{ sorting.current_direction }}">
+        <div class="filter-actions" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:12px;">
+            <button type="submit" class="btn btn-primary">Применить</button>
             <a href="{% url 'request-list' %}" class="btn btn-text">Сбросить</a>
         </div>
     </form>
@@ -48,12 +282,48 @@
                             {% if can_bulk_delete %}
                                 <th style="width:40px;"></th>
                             {% endif %}
-                            <th>Создано</th>
-                            <th>Сотрудник</th>
-                            <th>Кампания</th>
-                            <th>Размер выплаты</th>
-                            <th>Статус</th>
-                            <th>Ответственный</th>
+                            {% with header=sorting.created %}
+                                <th>
+                                    <a href="{{ header.url }}">
+                                        Создано{% if header.is_active %} {% if header.current_direction == 'asc' %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+                                    </a>
+                                </th>
+                            {% endwith %}
+                            {% with header=sorting.employee %}
+                                <th>
+                                    <a href="{{ header.url }}">
+                                        Сотрудник{% if header.is_active %} {% if header.current_direction == 'asc' %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+                                    </a>
+                                </th>
+                            {% endwith %}
+                            {% with header=sorting.campaign %}
+                                <th style="min-width: 150px;">
+                                    <a href="{{ header.url }}">
+                                        Кампания{% if header.is_active %} {% if header.current_direction == 'asc' %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+                                    </a>
+                                </th>
+                            {% endwith %}
+                            {% with header=sorting.amount %}
+                                <th>
+                                    <a href="{{ header.url }}">
+                                        Размер выплаты{% if header.is_active %} {% if header.current_direction == 'asc' %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+                                    </a>
+                                </th>
+                            {% endwith %}
+                            {% with header=sorting.status %}
+                                <th>
+                                    <a href="{{ header.url }}">
+                                        Статус{% if header.is_active %} {% if header.current_direction == 'asc' %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+                                    </a>
+                                </th>
+                            {% endwith %}
+                            {% with header=sorting.responsible %}
+                                <th style="min-width: 150px;">
+                                    <a href="{{ header.url }}">
+                                        Ответственный{% if header.is_active %} {% if header.current_direction == 'asc' %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+                                    </a>
+                                </th>
+                            {% endwith %}
                             <th>Обоснование</th>
                             <th>Комментарий администратора</th>
                             {% if show_manage_column %}
@@ -377,6 +647,149 @@
                 }
             });
         });
+
+        function closeAllMultiselects(target, exception) {
+            document.querySelectorAll('[data-multiselect].open').forEach((container) => {
+                if (container === exception) {
+                    return;
+                }
+                if (!target || !container.contains(target)) {
+                    container.classList.remove('open');
+                }
+            });
+        }
+
+        const initMultiselect = (container) => {
+            const toggle = container.querySelector('.multi-filter__toggle');
+            const menu = container.querySelector('.multi-filter__menu');
+            if (!toggle || !menu) {
+                return;
+            }
+
+            const labelNode = toggle.querySelector('[data-label]');
+            const defaultLabel = container.dataset.defaultLabel || (labelNode ? labelNode.textContent.trim() : '');
+            const counterLabel = container.dataset.counterLabel || defaultLabel || 'Выбрано';
+            const selectAll = container.querySelector('input[data-select-all]');
+            const optionCheckboxes = Array.from(container.querySelectorAll('input[data-option]'));
+
+            const updateLabel = () => {
+                if (!labelNode) {
+                    return;
+                }
+
+                if (selectAll && selectAll.checked) {
+                    labelNode.textContent = defaultLabel || 'Все';
+                    return;
+                }
+
+                const selectedLabels = optionCheckboxes
+                    .filter((checkbox) => checkbox.checked)
+                    .map((checkbox) => checkbox.dataset.label || checkbox.value);
+
+                if (selectedLabels.length === 0) {
+                    labelNode.textContent = defaultLabel || 'Все';
+                    if (selectAll) {
+                        selectAll.checked = true;
+                    }
+                    return;
+                }
+
+                if (selectedLabels.length === 1) {
+                    labelNode.textContent = selectedLabels[0];
+                } else {
+                    labelNode.textContent = `${counterLabel} (${selectedLabels.length})`;
+                }
+            };
+
+            const refreshSelectAll = () => {
+                if (!selectAll) {
+                    return;
+                }
+                const hasSelection = optionCheckboxes.some((checkbox) => checkbox.checked);
+                selectAll.checked = !hasSelection;
+            };
+
+            const setOpen = (value) => {
+                if (value) {
+                    closeAllMultiselects(null, container);
+                    container.classList.add('open');
+                } else {
+                    container.classList.remove('open');
+                }
+            };
+
+            toggle.addEventListener('click', (event) => {
+                event.preventDefault();
+                const willOpen = !container.classList.contains('open');
+                setOpen(willOpen);
+            });
+
+            if (selectAll) {
+                selectAll.addEventListener('change', () => {
+                    if (selectAll.checked) {
+                        optionCheckboxes.forEach((checkbox) => {
+                            checkbox.checked = false;
+                        });
+                    }
+                    updateLabel();
+                    refreshSelectAll();
+                });
+            }
+
+            optionCheckboxes.forEach((checkbox) => {
+                checkbox.addEventListener('change', () => {
+                    if (checkbox.checked && selectAll) {
+                        selectAll.checked = false;
+                    } else if (!optionCheckboxes.some((option) => option.checked) && selectAll) {
+                        selectAll.checked = true;
+                    }
+                    updateLabel();
+                });
+            });
+
+            refreshSelectAll();
+            updateLabel();
+        };
+
+        document.querySelectorAll('[data-multiselect]').forEach((container) => {
+            initMultiselect(container);
+        });
+
+        document.addEventListener('click', (event) => {
+            closeAllMultiselects(event.target);
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeAllMultiselects();
+            }
+        });
+
+        // Сохранение позиции скролла при клике на кнопку сброса
+        document.querySelectorAll('.filter-actions a').forEach((link) => {
+            if (link.textContent.trim() === 'Сбросить') {
+                link.addEventListener('click', () => {
+                    const payload = {
+                        scrollY: getScrollY(),
+                        scrollX: getScrollX()
+                    };
+                    
+                    let wrapper = document.getElementById('request-table-wrapper');
+                    if (wrapper) {
+                        payload.wrapperId = wrapper.id;
+                        payload.wrapperScrollLeft = wrapper.scrollLeft;
+                        payload.wrapperScrollTop = wrapper.scrollTop;
+                    }
+                    
+                    try {
+                        sessionStorage.setItem(scrollStorageKey, JSON.stringify(payload));
+                    } catch (error) {
+                        // Игнорируем ошибки
+                    }
+                });
+            }
+        });
+
     });
 })();
 </script>

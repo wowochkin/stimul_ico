@@ -16,6 +16,14 @@ class RequestCampaignQuerySet(models.QuerySet):
             models.Q(deadline__isnull=True) | models.Q(deadline__gte=today)
         )
 
+    def current(self) -> Optional['RequestCampaign']:
+        """
+        Возвращает текущую активную кампанию, если она доступна.
+        Кампания считается текущей, когда она открыта, дата открытия наступила,
+        а дедлайн ещё не прошёл (или отсутствует).
+        """
+        return self.active().order_by('-opens_at', 'name').first()
+
 
 class RequestCampaign(models.Model):
     class Status(models.TextChoices):

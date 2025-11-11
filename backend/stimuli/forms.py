@@ -121,6 +121,15 @@ class StimulusRequestForm(forms.ModelForm):
         ).order_by('-opens_at', 'name')
         
         self.fields['campaign'].required = True
+
+        if not self.is_bound:
+            has_instance_campaign = getattr(self.instance, 'campaign_id', None)
+            has_initial_campaign = bool(self.initial.get('campaign'))
+            if not has_instance_campaign and not has_initial_campaign:
+                default_campaign = RequestCampaign.objects.current()
+                if default_campaign:
+                    self.initial['campaign'] = default_campaign.pk
+                    self.fields['campaign'].initial = default_campaign.pk
         
         # Ограничиваем выбор сотрудников в зависимости от роли пользователя
         if user:

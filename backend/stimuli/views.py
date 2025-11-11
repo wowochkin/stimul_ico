@@ -6,10 +6,10 @@ from datetime import datetime
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db import transaction
-from django.db.models import BooleanField, Case, Value, When, Q
+from django.db.models import BooleanField, Case, Value, When, Q, QuerySet
 from django.http import Http404, QueryDict, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views import View, generic
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -25,6 +25,68 @@ from one_time_payments.models import RequestCampaign
 from staffing.models import Division, Position
 from .models import Employee, StimulusRequest
 from .services import recompute_employee_totals
+
+
+def resolve_sorting(request, sortable_fields, default_field='', default_direction='asc'):
+    sort_field = request.GET.get('sort') or default_field
+    if sort_field not in sortable_fields:
+        sort_field = default_field
+
+    sort_direction = request.GET.get('direction') or default_direction
+    if sort_direction not in ('asc', 'desc'):
+        sort_direction = default_direction
+
+    ordering = []
+    for field in sortable_fields.get(sort_field, ()):
+        ordering.append(f'-{field}' if sort_direction == 'desc' else field)
+    ordering.append('-pk' if sort_direction == 'desc' else 'pk')
+
+    return sort_field, sort_direction, ordering
+
+
+class SortingMixin:
+    """Mixin с общими помощниками для сортировки списков."""
+
+    SORTABLE_FIELDS = {}
+    DEFAULT_SORT_FIELD = ''
+    DEFAULT_SORT_DIRECTION = 'asc'
+
+    def _get_sorting_params(self):
+        return resolve_sorting(
+            self.request,
+            self.SORTABLE_FIELDS,
+            self.DEFAULT_SORT_FIELD,
+            self.DEFAULT_SORT_DIRECTION,
+        )
+
+    def _build_sorting_context(self):
+        base_params = self.request.GET.copy()
+        for key in ('page', 'sort', 'direction'):
+            base_params.pop(key, None)
+
+        sorting = {}
+        current_sort = getattr(self, 'sort_field', self.DEFAULT_SORT_FIELD)
+        current_direction = getattr(self, 'sort_direction', self.DEFAULT_SORT_DIRECTION)
+
+        for key in self.SORTABLE_FIELDS.keys():
+            params = base_params.copy()
+            is_active = key == current_sort
+            direction_now = current_direction if is_active else None
+            next_direction = 'desc' if is_active and current_direction == 'asc' else 'asc'
+            params['sort'] = key
+            params['direction'] = next_direction
+            query_string = params.urlencode()
+            url = f'?{query_string}' if query_string else f'?sort={key}&direction={next_direction}'
+            sorting[key] = {
+                'url': url,
+                'is_active': is_active,
+                'current_direction': direction_now,
+                'next_direction': next_direction,
+            }
+
+        sorting['current_sort'] = current_sort
+        sorting['current_direction'] = current_direction
+        return sorting
 
 
 class EmployeeListView(LoginRequiredMixin, PermissionRequiredMixin, generic.ListView):
@@ -190,11 +252,22 @@ class EmployeeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, generic.De
     success_url = reverse_lazy('employee-list')
 
 
-class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
+class StimulusRequestListView(SortingMixin, LoginRequiredMixin, generic.ListView):
     model = StimulusRequest
     template_name = 'stimuli/request_list.html'
     context_object_name = 'requests'
     paginate_by = 25
+
+    SORTABLE_FIELDS = {
+        'created': ('created_at',),
+        'employee': ('employee__full_name',),
+        'campaign': ('campaign__name', 'employee__full_name'),
+        'amount': ('amount', 'employee__full_name'),
+        'status': ('status', 'employee__full_name'),
+        'responsible': ('requested_by__last_name', 'requested_by__first_name', 'requested_by__username', 'employee__full_name'),
+    }
+    DEFAULT_SORT_FIELD = 'employee'
+    DEFAULT_SORT_DIRECTION = 'asc'
 
     def get_queryset(self):
         qs = StimulusRequest.objects.select_related('employee', 'requested_by', 'campaign')
@@ -232,20 +305,136 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         else:
             base_qs = qs.none()
         
-        self.filterset = StimulusRequestFilter(self.request.GET or None, queryset=base_qs)
+        # Обрабатываем параметры для filterset (только campaign и requested_by)
+        params = self.request.GET.copy()
+        for key in ('requested_by',):
+            values = [value for value in params.getlist(key) if value != '__all__']
+            if values:
+                params.setlist(key, values)
+            else:
+                params.pop(key, None)
+        
+        # Убираем status из params для filterset - обработаем вручную
+        params.pop('status', None)
+
+        self.filterset = StimulusRequestFilter(params or None, queryset=base_qs, request=self.request)
         filtered_qs = self.filterset.qs
+
+        base_for_options = self.filterset.queryset if hasattr(self.filterset, 'queryset') else base_qs
+        employee_ids = [
+            value for value in base_for_options.values_list('employee_id', flat=True).distinct()
+            if value is not None
+        ]
+        division_ids = [
+            value for value in base_for_options.values_list('employee__division_id', flat=True).distinct()
+            if value is not None
+        ]
+        self.employee_options = list(Employee.objects.filter(id__in=employee_ids).order_by('full_name'))
+        self.division_options = list(Division.objects.filter(id__in=division_ids).order_by('name'))
+
+        raw_employee_values = self.request.GET.getlist('employees')
+        selected_employee_ids = []
+        for value in raw_employee_values:
+            if value == '__all__':
+                continue
+            try:
+                selected_employee_ids.append(int(value))
+            except (TypeError, ValueError):
+                continue
+        if selected_employee_ids:
+            filtered_qs = filtered_qs.filter(employee_id__in=selected_employee_ids)
+
+        raw_division_values = self.request.GET.getlist('divisions')
+        selected_division_ids = []
+        for value in raw_division_values:
+            if value == '__all__':
+                continue
+            try:
+                selected_division_ids.append(int(value))
+            except (TypeError, ValueError):
+                continue
+        if selected_division_ids:
+            filtered_qs = filtered_qs.filter(employee__division_id__in=selected_division_ids)
+
+        self.selected_employee_ids = selected_employee_ids
+        self.selected_division_ids = selected_division_ids
+
+        # Обработка фильтра по статусу
+        status_choices = list(StimulusRequest.Status.choices)
+        valid_status_values = {choice[0] for choice in status_choices}
+        raw_status_values = self.request.GET.getlist('status')
+        selected_statuses = []
+        for value in raw_status_values:
+            if value == '__all__':
+                continue
+            if value in valid_status_values:
+                selected_statuses.append(value)
+        
+        # Применяем фильтр по статусу к queryset
+        if selected_statuses:
+            filtered_qs = filtered_qs.filter(status__in=selected_statuses)
+        
+        self.status_options = status_choices
+        self.selected_statuses = selected_statuses
+
+        responsible_queryset = self.filterset.form.fields['requested_by'].queryset
+        self.responsible_options = list(responsible_queryset)
+        raw_responsible_values = self.request.GET.getlist('requested_by')
+        selected_responsible_ids = []
+        for value in raw_responsible_values:
+            if value == '__all__':
+                continue
+            try:
+                selected_responsible_ids.append(int(value))
+            except (TypeError, ValueError):
+                continue
+        self.selected_responsible_ids = selected_responsible_ids
+
+        # Обработка фильтра кампаний
+        from one_time_payments.models import RequestCampaign
+        if user.is_staff or user.groups.filter(name='Руководство института').exists():
+            # Администраторы и руководство видят все кампании кроме черновиков
+            campaign_queryset = RequestCampaign.objects.exclude(
+                status=RequestCampaign.Status.DRAFT
+            ).order_by('-opens_at', 'name')
+        else:
+            # Остальные видят только открытые кампании
+            campaign_queryset = RequestCampaign.objects.filter(
+                status=RequestCampaign.Status.OPEN
+            ).order_by('-opens_at', 'name')
+        
+        # Получаем все кампании, которые есть в отфильтрованных заявках
+        campaign_ids_in_requests = base_for_options.values_list('campaign_id', flat=True).distinct()
+        self.campaign_options = list(campaign_queryset.filter(id__in=campaign_ids_in_requests))
+        
+        raw_campaign_values = self.request.GET.getlist('campaign')
+        selected_campaign_ids = []
+        for value in raw_campaign_values:
+            if value == '__all__':
+                continue
+            try:
+                selected_campaign_ids.append(int(value))
+            except (TypeError, ValueError):
+                continue
+        if selected_campaign_ids:
+            filtered_qs = filtered_qs.filter(campaign_id__in=selected_campaign_ids)
+        
+        self.selected_campaign_ids = selected_campaign_ids
+
+        self.sort_field, self.sort_direction, ordering = self._get_sorting_params()
+        ordered_qs = filtered_qs.order_by(*ordering)
         
         # Добавляем аннотации для определения прав редактирования и удаления
         if can_view_all_requests(user) and user.is_staff:
             # Администраторы имеют полный доступ
-            return filtered_qs.annotate(
+            return ordered_qs.annotate(
                 can_edit=Value(True, output_field=BooleanField()),
                 can_delete=Value(True, output_field=BooleanField()),
                 can_change_status=Value(True, output_field=BooleanField()),
             )
         elif can_view_all_requests(user) and user.groups.filter(name='Руководство института').exists():
             # Руководство института видит все заявки, но редактировать/удалять может только свои в статусе PENDING
-            return filtered_qs.annotate(
+            return ordered_qs.annotate(
                 can_edit=Case(
                     When(
                         requested_by=user,
@@ -268,7 +457,7 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
             )
 
         # Для остальных пользователей проверяем права для каждой заявки
-        annotated_qs = filtered_qs.annotate(
+        annotated_qs = ordered_qs.annotate(
             can_edit=Value(False, output_field=BooleanField()),
             can_delete=Value(False, output_field=BooleanField()),
             can_change_status=Value(False, output_field=BooleanField()),
@@ -285,6 +474,7 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['filter'] = self.filterset
+        context['filter_form'] = self.filterset.form
         user = self.request.user
         
         # Определяем права на основе роли пользователя
@@ -305,6 +495,12 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         context['is_department_manager'] = is_department_manager(user)
         context['is_employee'] = is_employee(user)
         context['user_division'] = get_user_division(user)
+        context['filter_form'] = self.filterset.form
+        export_url = reverse('request-export')
+        query_string = self.request.GET.urlencode()
+        if query_string:
+            export_url = f'{export_url}?{query_string}'
+        context['export_url'] = export_url
         
         base_columns = 8
         if can_bulk_delete:
@@ -312,7 +508,152 @@ class StimulusRequestListView(LoginRequiredMixin, generic.ListView):
         if show_manage:
             base_columns += 1
         context['table_colspan'] = base_columns
+        context['sorting'] = self._build_sorting_context()
+        context['employee_options'] = getattr(self, 'employee_options', [])
+        context['division_options'] = getattr(self, 'division_options', [])
+        context['selected_employee_ids'] = getattr(self, 'selected_employee_ids', [])
+        context['selected_division_ids'] = getattr(self, 'selected_division_ids', [])
+        context['status_options'] = getattr(self, 'status_options', [])
+        context['selected_statuses'] = getattr(self, 'selected_statuses', [])
+        context['responsible_options'] = getattr(self, 'responsible_options', [])
+        context['selected_responsible_ids'] = getattr(self, 'selected_responsible_ids', [])
+        context['campaign_options'] = getattr(self, 'campaign_options', [])
+        context['selected_campaign_ids'] = getattr(self, 'selected_campaign_ids', [])
         return context
+
+
+class StimulusRequestExportView(LoginRequiredMixin, View):
+    """Экспорт заявок на стимулирование в Excel."""
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+
+    def get(self, request, *args, **kwargs):
+        list_view = StimulusRequestListView()
+        list_view.setup(request, *args, **kwargs)
+        queryset = list_view.get_queryset()
+        filterset = getattr(list_view, 'filterset', None)
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Заявки"
+
+        headers = [
+            "ID",
+            "Создано",
+            "Обновлено",
+            "Сотрудник",
+            "Кампания",
+            "Размер выплаты",
+            "Статус",
+            "Итоговый статус",
+            "Ответственный",
+            "Обоснование",
+            "Комментарий администратора",
+            "В архиве с",
+        ]
+
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = self.header_font
+            cell.fill = self.header_fill
+            cell.alignment = self.header_alignment
+
+        for row_index, request_obj in enumerate(queryset, start=2):
+            created_at = request_obj.created_at.strftime('%d.%m.%Y %H:%M') if request_obj.created_at else ''
+            updated_at = request_obj.updated_at.strftime('%d.%m.%Y %H:%M') if request_obj.updated_at else ''
+            archived_at = request_obj.archived_at.strftime('%d.%m.%Y %H:%M') if request_obj.archived_at else ''
+            responsible = request_obj.requested_by.get_full_name() or request_obj.requested_by.username
+            row = [
+                request_obj.pk,
+                created_at,
+                updated_at,
+                request_obj.employee.full_name,
+                request_obj.campaign.name if request_obj.campaign else '',
+                float(request_obj.amount) if request_obj.amount is not None else None,
+                request_obj.get_status_display(),
+                request_obj.final_status or '',
+                responsible,
+                request_obj.justification,
+                request_obj.admin_comment,
+                archived_at,
+            ]
+            for col_index, value in enumerate(row, 1):
+                ws.cell(row=row_index, column=col_index, value=value)
+
+        self._autosize_columns(ws)
+
+        if filterset is not None and request.GET:
+            filters_sheet = wb.create_sheet("Фильтры")
+            self._write_filters_sheet(filters_sheet, filterset)
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        filename = f"stimulus_requests_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    def _autosize_columns(self, worksheet):
+        for column in worksheet.columns:
+            max_length = 0
+            column_letter = get_column_letter(column[0].column)
+            for cell in column:
+                if cell.value is None:
+                    continue
+                try:
+                    cell_length = len(str(cell.value))
+                except (TypeError, ValueError):
+                    cell_length = 0
+                if cell_length > max_length:
+                    max_length = cell_length
+            worksheet.column_dimensions[column_letter].width = min(max_length + 2, 60)
+
+    def _write_filters_sheet(self, worksheet, filterset):
+        worksheet.title = "Фильтры"
+        worksheet.cell(row=1, column=1, value="Поле").font = self.header_font
+        worksheet.cell(row=1, column=1).fill = self.header_fill
+        worksheet.cell(row=1, column=1).alignment = self.header_alignment
+        worksheet.cell(row=1, column=2, value="Значение").font = self.header_font
+        worksheet.cell(row=1, column=2).fill = self.header_fill
+        worksheet.cell(row=1, column=2).alignment = self.header_alignment
+
+        form = filterset.form
+        form_is_valid = form.is_valid()
+
+        row_index = 2
+        for field_name, field in form.fields.items():
+            if form_is_valid:
+                value = form.cleaned_data.get(field_name)
+            else:
+                value = form.data.get(field_name)
+
+            if value in (None, '', [], (), {}):
+                continue
+
+            if isinstance(value, QuerySet):
+                value = ', '.join(str(item) for item in value)
+            elif isinstance(value, (list, tuple, set)):
+                value = ', '.join(str(item) for item in value if item not in (None, ''))
+            elif hasattr(value, 'isoformat'):
+                try:
+                    value = value.strftime('%d.%m.%Y')
+                except (TypeError, ValueError):
+                    value = str(value)
+            else:
+                value = str(value)
+
+            worksheet.cell(row=row_index, column=1, value=field.label or field_name)
+            worksheet.cell(row=row_index, column=2, value=value)
+            row_index += 1
+
+        self._autosize_columns(worksheet)
 
 
 class StimulusRequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, generic.CreateView):
@@ -641,7 +982,15 @@ class StimulusRequestBulkCreateView(LoginRequiredMixin, PermissionRequiredMixin,
         if isinstance(data, QueryDict):
             data = data.dict()
 
-        selected_campaign = campaign_id if campaign_id is not None else data.get('campaign', '')
+        if campaign_id not in (None, ''):
+            selected_campaign = str(campaign_id)
+        else:
+            selected_campaign = str(data.get('campaign', '') or '')
+
+        if not selected_campaign:
+            default_campaign = RequestCampaign.objects.current()
+            if default_campaign:
+                selected_campaign = str(default_campaign.id)
 
         entries = []
         for employee in employees:

@@ -18,6 +18,7 @@ urlpatterns = [
     path('employees/excel-template/', views.EmployeeExcelTemplateView.as_view(), name='employee-excel-template'),
     path('employees/excel-upload/', views.EmployeeExcelUploadView.as_view(), name='employee-excel-upload'),
     path('requests/', views.StimulusRequestListView.as_view(), name='request-list'),
+    path('requests/export/', views.StimulusRequestExportView.as_view(), name='request-export'),
     path('requests/new/', views.StimulusRequestCreateView.as_view(), name='request-create'),
     path('requests/bulk-create/', views.StimulusRequestBulkCreateView.as_view(), name='request-bulk-create'),
     path('requests/<int:pk>/edit/', views.StimulusRequestUpdateView.as_view(), name='request-edit'),

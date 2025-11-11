@@ -1,4 +1,5 @@
 import django_filters
+from django.contrib.auth import get_user_model
 
 from one_time_payments.models import RequestCampaign
 from staffing.models import Division, Position
@@ -28,13 +29,23 @@ class EmployeeFilter(django_filters.FilterSet):
 
 
 class StimulusRequestFilter(django_filters.FilterSet):
-    employee__full_name = django_filters.CharFilter(label='ФИО сотрудника', lookup_expr='icontains')
-    status = django_filters.ChoiceFilter(label='Статус', choices=StimulusRequest.Status.choices)
+    status = django_filters.MultipleChoiceFilter(
+        label='Статус',
+        choices=StimulusRequest.Status.choices,
+        field_name='status',
+        lookup_expr='in'
+    )
     campaign = django_filters.ModelChoiceFilter(label='Кампания', queryset=RequestCampaign.objects.none())
+    requested_by = django_filters.ModelMultipleChoiceFilter(
+        label='Ответственный',
+        queryset=get_user_model().objects.none(),
+        field_name='requested_by',
+        to_field_name='id'
+    )
 
     class Meta:
         model = StimulusRequest
-        fields = ['employee__full_name', 'status', 'campaign']
+        fields = ['status', 'campaign', 'requested_by']
 
     def __init__(self, data=None, queryset=None, *, request=None, prefix=None):
         super().__init__(data, queryset, request=request, prefix=prefix)
@@ -58,3 +69,42 @@ class StimulusRequestFilter(django_filters.FilterSet):
             self.filters['campaign'].field.queryset = RequestCampaign.objects.exclude(
                 status=RequestCampaign.Status.DRAFT
             ).order_by('-opens_at', 'name')
+
+        requested_by_filter = self.filters['requested_by']
+        if queryset is not None:
+            user_ids = queryset.values_list('requested_by_id', flat=True).distinct()
+            requested_by_filter.field.queryset = get_user_model().objects.filter(
+                id__in=user_ids
+            ).order_by('last_name', 'first_name', 'username')
+        else:
+            requested_by_filter.field.queryset = get_user_model().objects.none()
+
+
+class CampaignStimulusRequestFilter(django_filters.FilterSet):
+    status = django_filters.MultipleChoiceFilter(
+        label='Статус',
+        choices=StimulusRequest.Status.choices,
+        field_name='status',
+        lookup_expr='in'
+    )
+    requested_by = django_filters.ModelMultipleChoiceFilter(
+        label='Ответственный',
+        queryset=get_user_model().objects.none(),
+        field_name='requested_by',
+        to_field_name='id'
+    )
+
+    class Meta:
+        model = StimulusRequest
+        fields = ['status', 'requested_by']
+
+    def __init__(self, data=None, queryset=None, *, request=None, prefix=None):
+        super().__init__(data, queryset, request=request, prefix=prefix)
+
+        requested_by_filter = self.filters['requested_by']
+        requested_by_filter.field.empty_label = 'Все ответственные'
+
+        qs = queryset or StimulusRequest.objects.none()
+        user_ids = qs.values_list('requested_by_id', flat=True).distinct()
+        UserModel = get_user_model()
+        requested_by_filter.field.queryset = UserModel.objects.filter(id__in=user_ids).order_by('last_name', 'first_name', 'username')
